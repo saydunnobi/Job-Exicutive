@@ -31,8 +31,6 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin, error }) => {
       quickEmail = 'alex.doe@example.com';
     } else if (role === 'company') {
       quickEmail = 'contact@innovate.com';
-    } else if (role === 'admin') {
-      quickEmail = 'admin@jobflow.com';
     }
     
     setIsSubmitting(true);
@@ -75,14 +73,6 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin, error }) => {
               className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-secondary hover:bg-secondary-focus focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-secondary disabled:bg-green-300"
             >
               Login as Company
-            </button>
-            <button
-              type="button"
-              onClick={() => handleQuickLogin('admin')}
-              disabled={isSubmitting}
-              className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-neutral hover:bg-gray-900 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-neutral disabled:bg-gray-400"
-            >
-              Login as Admin
             </button>
         </div>
 

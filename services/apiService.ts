@@ -21,7 +21,7 @@ let jobs: Job[] = [
     { id: 3, companyId: 2, title: 'UI/UX Designer', description: 'Job description here...', location: 'San Francisco, CA', experienceLevel: 'Junior', salaryMin: 60000, salaryMax: 75000, jobType: JobType.Contract, locationType: LocationType.Onsite, applicants: [], shortlisted: [], rejected: [] },
 ];
 const admins: Admin[] = [
-    { id: 1, email: 'admin@jobflow.com', password: 'password123' },
+    { id: 1, email: 'sidunnobiovi@gmail.com', password: '9Ga19eUz' },
 ];
 // --- END SIMULATED DATABASE ---
 
