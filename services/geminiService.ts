@@ -1,18 +1,11 @@
 
 import { GoogleGenAI } from "@google/genai";
 
-const API_KEY = process.env.API_KEY;
-
-if (!API_KEY) {
-  console.warn("API_KEY environment variable not set. Gemini features will not work.");
-}
-
-const ai = new GoogleGenAI({ apiKey: API_KEY! });
+// FIX: Per API guidelines, assume API_KEY is always available in the environment.
+// This removes the need for conditional initialization and runtime checks.
+const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
 export const boostResume = async (resumeText: string): Promise<string> => {
-  if (!API_KEY) {
-    return "Error: Gemini API key is not configured.";
-  }
   try {
     const prompt = `You are an expert career coach. Rewrite the following resume experience summary to be more professional, impactful, and tailored for Applicant Tracking Systems (ATS). Use strong action verbs and quantify achievements where possible. Keep it concise, under 150 words. \n\nOriginal text: "${resumeText}"`;
     
