@@ -1,11 +1,11 @@
-
 import React, { useState, useMemo } from 'react';
-// FIX: Import JobType and LocationType enums to use in mock data.
 import { Job, Company, JobSeeker, Review, UserRole, JobType, LocationType } from './types';
 import JobCard from './components/JobCard';
 import Modal from './components/Modal';
-import { BriefcaseIcon, BuildingOfficeIcon, StarIcon } from './components/icons';
+import { BriefcaseIcon, BuildingOfficeIcon, StarIcon, PencilIcon } from './components/icons';
 import ResumeBooster from './components/ResumeBooster';
+import JobSeekerProfileEdit from './components/JobSeekerProfileEdit';
+import CompanyProfileEdit from './components/CompanyProfileEdit';
 
 // MOCK DATA
 const mockCompanies: Company[] = [
@@ -17,7 +17,6 @@ const mockJobSeekers: JobSeeker[] = [
     { id: 101, name: 'Alice Johnson', email: 'alice@email.com', phone: '123-456-7890', skills: ['React', 'TypeScript', 'Node.js'], experience: [{title: 'Frontend Developer', company: 'Tech Corp', years: '2'}], education: [{degree: 'B.S. Computer Science', school: 'State University', year: '2021'}], expectedSalary: 80000, photoUrl: 'https://picsum.photos/seed/seeker1/200', viewedBy: [1], appliedJobs: [2] },
 ];
 
-// FIX: Use JobType and LocationType enums instead of string literals to match type definitions.
 const mockJobs: Job[] = [
     { id: 1, title: 'Frontend Developer', companyId: 1, description: 'Develop amazing user interfaces.', location: 'New York, NY', experienceLevel: 'Mid-Senior', salaryMin: 90000, salaryMax: 120000, jobType: JobType.FullTime, locationType: LocationType.Hybrid, applicants: [], shortlisted: [], rejected: [] },
     { id: 2, title: 'Backend Engineer', companyId: 2, description: 'Work on our scalable backend.', location: 'San Francisco, CA', experienceLevel: 'Senior', salaryMin: 120000, salaryMax: 150000, jobType: JobType.FullTime, locationType: LocationType.Remote, applicants: [101], shortlisted: [], rejected: [] },
@@ -45,18 +44,17 @@ const App: React.FC = () => {
 
     const [selectedJob, setSelectedJob] = useState<Job | null>(null);
     const [isModalOpen, setIsModalOpen] = useState(false);
+    const [isEditProfileModalOpen, setIsEditProfileModalOpen] = useState(false);
 
     const handleApply = (jobId: number) => {
         if (userRole === UserRole.JobSeeker && currentUser) {
             const seeker = currentUser as JobSeeker;
             if (seeker.appliedJobs.includes(jobId)) return;
 
-            // Update seeker's applied jobs
             const updatedSeeker = { ...seeker, appliedJobs: [...seeker.appliedJobs, jobId] };
             setJobSeekers(jobSeekers.map(js => js.id === seeker.id ? updatedSeeker : js));
             setCurrentUser(updatedSeeker);
 
-            // Update job's applicants
             setJobs(jobs.map(job => job.id === jobId ? { ...job, applicants: [...job.applicants, seeker.id] } : job));
 
             alert(`Successfully applied for job ID ${jobId}`);
@@ -84,6 +82,18 @@ const App: React.FC = () => {
       if (company.reviews.length === 0) return 0;
       const total = company.reviews.reduce((acc, review) => acc + review.rating, 0);
       return total / company.reviews.length;
+    };
+    
+    const handleUpdateJobSeeker = (updatedSeeker: JobSeeker) => {
+        setJobSeekers(jobSeekers.map(js => js.id === updatedSeeker.id ? updatedSeeker : js));
+        setCurrentUser(updatedSeeker);
+        setIsEditProfileModalOpen(false);
+    };
+
+    const handleUpdateCompany = (updatedCompany: Company) => {
+        setCompanies(companies.map(c => c.id === updatedCompany.id ? updatedCompany : c));
+        setCurrentUser(updatedCompany);
+        setIsEditProfileModalOpen(false);
     };
 
     const renderHeader = () => (
@@ -128,7 +138,12 @@ const App: React.FC = () => {
                 </div>
                 <div className="space-y-8">
                     <div className="bg-white p-6 rounded-lg shadow-md border border-gray-200">
-                        <img src={seeker.photoUrl} alt={seeker.name} className="w-24 h-24 rounded-full mx-auto mb-4 border-4 border-primary" />
+                         <div className="relative">
+                            <img src={seeker.photoUrl} alt={seeker.name} className="w-24 h-24 rounded-full mx-auto mb-4 border-4 border-primary" />
+                            <button onClick={() => setIsEditProfileModalOpen(true)} className="absolute top-0 right-1/2 translate-x-[4rem] bg-white p-2 rounded-full shadow-md hover:bg-gray-100 transition-transform hover:scale-110">
+                                <PencilIcon className="h-5 w-5 text-primary" />
+                            </button>
+                        </div>
                         <h2 className="text-xl font-bold text-center text-neutral">{seeker.name}</h2>
                         <p className="text-center text-gray-500 mb-4">{seeker.email}</p>
                         <div className="border-t pt-4">
@@ -181,7 +196,7 @@ const App: React.FC = () => {
                                                 const seeker = jobSeekers.find(s => s.id === seekerId);
                                                 return seeker ? (
                                                     <div key={seeker.id} className="flex items-center bg-gray-50 p-2 rounded-md">
-                                                        <img src={seeker.photoUrl} className="h-10 w-10 rounded-full mr-4" />
+                                                        <img src={seeker.photoUrl} alt={seeker.name} className="h-10 w-10 rounded-full mr-4" />
                                                         <div>
                                                             <p className="font-semibold">{seeker.name}</p>
                                                             <p className="text-xs text-blue-600 hover:underline cursor-pointer">View Profile</p>
@@ -198,7 +213,12 @@ const App: React.FC = () => {
                 </div>
                  <div className="space-y-8">
                     <div className="bg-white p-6 rounded-lg shadow-md border border-gray-200">
-                        <img src={company.logo} alt={company.name} className="w-24 h-24 rounded-full mx-auto mb-4 border-4 border-secondary" />
+                        <div className="relative">
+                           <img src={company.logo} alt={company.name} className="w-24 h-24 rounded-full mx-auto mb-4 border-4 border-secondary" />
+                            <button onClick={() => setIsEditProfileModalOpen(true)} className="absolute top-0 right-1/2 translate-x-[4rem] bg-white p-2 rounded-full shadow-md hover:bg-gray-100 transition-transform hover:scale-110">
+                                <PencilIcon className="h-5 w-5 text-secondary" />
+                            </button>
+                        </div>
                         <h2 className="text-xl font-bold text-center text-neutral">{company.name}</h2>
                          {avgRating < 2.5 && avgRating > 0 && <span className="block mx-auto mt-2 text-center text-sm font-semibold bg-red-100 text-red-700 px-3 py-1 rounded-full w-fit">Bad Profile</span>}
                         <div className="border-t pt-4 mt-4">
@@ -305,6 +325,27 @@ const App: React.FC = () => {
                         </div>
                     </div>
                 )}
+            </Modal>
+
+            <Modal 
+              isOpen={isEditProfileModalOpen} 
+              onClose={() => setIsEditProfileModalOpen(false)} 
+              title={userRole === UserRole.JobSeeker ? 'Edit Profile' : 'Edit Company Profile'}
+            >
+               {isEditProfileModalOpen && userRole === UserRole.JobSeeker && currentUser && (
+                   <JobSeekerProfileEdit 
+                       seeker={currentUser as JobSeeker} 
+                       onSave={handleUpdateJobSeeker} 
+                       onCancel={() => setIsEditProfileModalOpen(false)}
+                   />
+               )}
+               {isEditProfileModalOpen && userRole === UserRole.Company && currentUser && (
+                   <CompanyProfileEdit 
+                       company={currentUser as Company} 
+                       onSave={handleUpdateCompany} 
+                       onCancel={() => setIsEditProfileModalOpen(false)}
+                   />
+               )}
             </Modal>
         </div>
     );
