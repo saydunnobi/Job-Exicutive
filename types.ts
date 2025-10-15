@@ -1,4 +1,3 @@
-
 export enum JobType {
   FullTime = 'Full-Time',
   PartTime = 'Part-Time',
@@ -23,36 +22,47 @@ export interface Job {
   salaryMax: number;
   jobType: JobType;
   locationType: LocationType;
-  applicants: number[]; // array of job seeker IDs
+  applicants: number[]; // array of seeker ids
   shortlisted: number[];
   rejected: number[];
+}
+
+export interface Review {
+    id: number;
+    reviewerName: string;
+    rating: number; // 1-5
+    comment: string;
+    date: string;
 }
 
 export interface Company {
   id: number;
   name: string;
-  description: string;
+  email: string;
+  password?: string; // Added for auth
   logo: string;
+  description: string;
   website: string;
   contactInfo: string;
+  reviews: Review[];
+  jobs: number[]; // array of job ids
 }
 
 export interface JobSeeker {
   id: number;
   name: string;
   email: string;
+  password?: string; // Added for auth
   phone: string;
   photoUrl: string;
-  resumeUrl: string;
   skills: string[];
+  resumeUrl: string; // url to pdf
   expectedSalary: number;
-  appliedJobs: number[]; // array of job IDs
+  appliedJobs: number[]; // array of job ids
 }
 
-export interface Review {
+export interface Admin {
   id: number;
-  reviewerName: string;
-  rating: number; // 1-5
-  comment: string;
-  date: string; // ISO string
+  email: string;
+  password?: string; // Added for auth
 }

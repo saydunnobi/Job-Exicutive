@@ -1,24 +1,50 @@
-
 import React, { useState } from 'react';
 
+type UserRole = 'seeker' | 'company' | 'admin';
+
 interface LoginPageProps {
-  onLogin: (userType: 'seeker' | 'company') => void;
+  onLogin: (email: string, password: string, role: UserRole) => void;
+  error: string | null;
 }
 
-const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
+const LoginPage: React.FC<LoginPageProps> = ({ onLogin, error }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [userType, setUserType] = useState<'seeker' | 'company'>('seeker');
+  const [userType, setUserType] = useState<UserRole>('seeker');
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
-    // In a real app, you'd have actual authentication logic here.
-    // For this demo, we'll just call the onLogin callback.
-    if (email && password) {
-      onLogin(userType);
-    } else {
-      alert('Please enter email and password.');
+    setIsSubmitting(true);
+    // Simulate network delay for better UX
+    setTimeout(() => {
+        onLogin(email, password, userType);
+        setIsSubmitting(false);
+    }, 300);
+  };
+  
+  const handleQuickLogin = (role: UserRole) => {
+    let quickEmail = '';
+    const quickPassword = 'password123';
+    
+    if (role === 'seeker') {
+      quickEmail = 'alex.doe@example.com';
+    } else if (role === 'company') {
+      quickEmail = 'contact@innovate.com';
+    } else if (role === 'admin') {
+      quickEmail = 'admin@jobflow.com';
     }
+    
+    setIsSubmitting(true);
+    setEmail(quickEmail);
+    setPassword(quickPassword);
+    setUserType(role);
+    
+    // Simulate network delay for better UX
+    setTimeout(() => {
+        onLogin(quickEmail, quickPassword, role);
+        setIsSubmitting(false);
+    }, 300);
   };
 
   return (
@@ -26,10 +52,51 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
       <div className="max-w-md w-full space-y-8 p-10 bg-white shadow-lg rounded-xl">
         <div>
           <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
-            Sign in to your account
+            Welcome to JobFlow
           </h2>
+          <p className="mt-2 text-center text-sm text-gray-600">
+            For demonstration, use the quick login buttons below.
+          </p>
         </div>
-        <form className="mt-8 space-y-6" onSubmit={handleLogin}>
+
+        <div className="space-y-4">
+            <button
+              type="button"
+              onClick={() => handleQuickLogin('seeker')}
+              disabled={isSubmitting}
+              className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-primary hover:bg-primary-focus focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary disabled:bg-indigo-300"
+            >
+              Login as Job Seeker
+            </button>
+            <button
+              type="button"
+              onClick={() => handleQuickLogin('company')}
+              disabled={isSubmitting}
+              className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-secondary hover:bg-secondary-focus focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-secondary disabled:bg-green-300"
+            >
+              Login as Company
+            </button>
+            <button
+              type="button"
+              onClick={() => handleQuickLogin('admin')}
+              disabled={isSubmitting}
+              className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-neutral hover:bg-gray-900 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-neutral disabled:bg-gray-400"
+            >
+              Login as Admin
+            </button>
+        </div>
+
+        <div className="relative my-4">
+            <div className="absolute inset-0 flex items-center">
+                <div className="w-full border-t border-gray-300" />
+            </div>
+            <div className="relative flex justify-center text-sm">
+                <span className="bg-white px-2 text-gray-500">Or sign in manually</span>
+            </div>
+        </div>
+
+        <form className="space-y-6" onSubmit={handleLogin}>
+          {error && <div className="p-3 bg-red-100 border border-red-400 text-red-700 rounded-md">{error}</div>}
           <div className="rounded-md shadow-sm -space-y-px">
             <div>
               <label htmlFor="email-address" className="sr-only">Email address</label>
@@ -61,12 +128,9 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
             </div>
           </div>
 
-          <div className="flex items-center justify-between">
-            <div className="text-sm">
-              <span className="font-medium text-gray-900">
-                Sign in as a:
-              </span>
-              <div className="mt-2 space-x-4">
+          <div>
+             <label className="block text-sm font-medium text-gray-700">Sign in as:</label>
+              <div className="mt-2 flex justify-around">
                 <label className="inline-flex items-center">
                   <input type="radio" className="form-radio text-primary" name="userType" value="seeker" checked={userType === 'seeker'} onChange={() => setUserType('seeker')} />
                   <span className="ml-2">Job Seeker</span>
@@ -75,16 +139,20 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
                   <input type="radio" className="form-radio text-primary" name="userType" value="company" checked={userType === 'company'} onChange={() => setUserType('company')} />
                   <span className="ml-2">Company</span>
                 </label>
+                <label className="inline-flex items-center">
+                  <input type="radio" className="form-radio text-primary" name="userType" value="admin" checked={userType === 'admin'} onChange={() => setUserType('admin')} />
+                  <span className="ml-2">Admin</span>
+                </label>
               </div>
-            </div>
           </div>
-
+          
           <div>
             <button
               type="submit"
-              className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-primary hover:bg-primary-focus focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary"
+              disabled={isSubmitting}
+              className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-primary hover:bg-primary-focus focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary disabled:bg-indigo-300"
             >
-              Sign in
+              {isSubmitting ? 'Signing in...' : 'Sign in'}
             </button>
           </div>
         </form>

@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Review } from '../types';
+import { StarIcon } from './icons';
 
 interface LeaveReviewFormProps {
   companyName: string;
@@ -46,9 +47,9 @@ const LeaveReviewForm: React.FC<LeaveReviewFormProps> = ({ companyName, onSubmit
               onClick={() => setRating(star)}
               onMouseEnter={() => setHoverRating(star)}
               onMouseLeave={() => setHoverRating(0)}
-              className={`text-3xl ${(hoverRating || rating) >= star ? 'text-yellow-400' : 'text-gray-300'} transition-colors`}
+              className="p-1"
             >
-              &#9733;
+              <StarIcon className={`h-8 w-8 transition-colors ${(hoverRating || rating) >= star ? 'text-yellow-400' : 'text-gray-300'}`} />
             </button>
           ))}
         </div>

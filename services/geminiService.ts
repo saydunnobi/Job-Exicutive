@@ -14,6 +14,7 @@ export const boostResume = async (resumeText: string): Promise<string> => {
       contents: prompt,
     });
 
+    // FIX: Per API guidelines, directly access the .text property for the response.
     return response.text;
   } catch (error) {
     console.error("Error boosting resume:", error);
