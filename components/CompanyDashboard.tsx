@@ -10,10 +10,10 @@ interface CompanyDashboardProps {
   jobs: Job[];
   seekers: JobSeeker[];
   onSaveProfile: (updatedCompany: Company) => void;
-  onPostJob: (job: Omit<Job, 'id' | 'applicants' | 'shortlisted' | 'rejected'>) => void;
+  onSaveJob: (job: Omit<Job, 'id' | 'applicants' | 'shortlisted' | 'rejected'>) => void;
 }
 
-const CompanyDashboard: React.FC<CompanyDashboardProps> = ({ company, jobs, seekers, onSaveProfile, onPostJob }) => {
+const CompanyDashboard: React.FC<CompanyDashboardProps> = ({ company, jobs, seekers, onSaveProfile, onSaveJob }) => {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isPostJobModalOpen, setIsPostJobModalOpen] = useState(false);
   const [viewingApplicantsForJob, setViewingApplicantsForJob] = useState<Job | null>(null);
@@ -26,7 +26,7 @@ const CompanyDashboard: React.FC<CompanyDashboardProps> = ({ company, jobs, seek
   };
 
   const handleSaveJob = (job: Omit<Job, 'id' | 'applicants' | 'shortlisted' | 'rejected'>) => {
-    onPostJob(job);
+    onSaveJob(job);
     setIsPostJobModalOpen(false);
   };
   

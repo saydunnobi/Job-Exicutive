@@ -4,7 +4,7 @@
  * This file simulates a backend server and database. In a real-world application,
  * these functions would make network requests (e.g., using fetch) to a REST or GraphQL API.
  */
-import { Job, Company, JobSeeker, Admin, Review, JobType, LocationType } from '../types';
+import { Job, Company, JobSeeker, Admin, Review, JobType, LocationType, BlogPost } from '../types';
 
 // --- SIMULATED DATABASE ---
 let seekers: JobSeeker[] = [
@@ -20,8 +20,28 @@ let jobs: Job[] = [
     { id: 2, companyId: 1, title: 'Backend Developer', description: 'Job description here...', location: 'Remote', experienceLevel: 'Senior', salaryMin: 120000, salaryMax: 150000, jobType: JobType.FullTime, locationType: LocationType.Remote, applicants: [], shortlisted: [], rejected: [] },
     { id: 3, companyId: 2, title: 'UI/UX Designer', description: 'Job description here...', location: 'San Francisco, CA', experienceLevel: 'Junior', salaryMin: 60000, salaryMax: 75000, jobType: JobType.Contract, locationType: LocationType.Onsite, applicants: [], shortlisted: [], rejected: [] },
 ];
+let blogPosts: BlogPost[] = [
+    {
+        id: 1,
+        authorId: 1,
+        authorName: 'Innovate Inc.',
+        authorRole: 'company',
+        authorPhotoUrl: 'https://i.pravatar.cc/150?u=innovate',
+        content: 'We are excited to announce we are hiring for several new roles! Check out our open positions for Frontend and Backend developers.',
+        timestamp: new Date(Date.now() - 1000 * 60 * 60 * 24).toISOString(), // 1 day ago
+    },
+    {
+        id: 2,
+        authorId: 1,
+        authorName: 'Alex Doe',
+        authorRole: 'seeker',
+        authorPhotoUrl: 'https://i.pravatar.cc/150?u=alex',
+        content: 'Just had a great interview experience! My tip for fellow developers: always be prepared to talk about a project you are passionate about. It really shows your skills and enthusiasm.',
+        timestamp: new Date(Date.now() - 1000 * 60 * 30).toISOString(), // 30 mins ago
+    }
+];
 const admins: Admin[] = [
-    { id: 1, email: 'sidunnobiovi@gmail.com', password: '9Ga19eUz' },
+    { id: 1, email: 'admin@jobexecutive.com', password: 'password123' },
 ];
 // --- END SIMULATED DATABASE ---
 
@@ -91,18 +111,34 @@ export const api = {
   getSeekers: async (): Promise<JobSeeker[]> => { await delay(100); return seekers; },
   getCompanies: async (): Promise<Company[]> => { await delay(100); return companies; },
   getJobs: async (): Promise<Job[]> => { await delay(100); return jobs; },
+  getBlogPosts: async (): Promise<BlogPost[]> => { await delay(100); return blogPosts; },
+
 
   // --- DATA MUTATION ---
-  updateSeeker: async (updatedSeeker: JobSeeker): Promise<JobSeeker> => {
+  saveSeeker: async (seekerData: JobSeeker): Promise<JobSeeker> => {
     await delay(200);
-    seekers = seekers.map(s => s.id === updatedSeeker.id ? updatedSeeker : s);
-    return updatedSeeker;
+    // ID of 0 indicates a new seeker
+    if (seekerData.id === 0) {
+      const newSeeker = { ...seekerData, id: Date.now() };
+      seekers.push(newSeeker);
+      return newSeeker;
+    }
+    // Existing ID means update
+    seekers = seekers.map(s => s.id === seekerData.id ? seekerData : s);
+    return seekerData;
   },
   
-  updateCompany: async (updatedCompany: Company): Promise<Company> => {
+  saveCompany: async (companyData: Company): Promise<Company> => {
     await delay(200);
-    companies = companies.map(c => c.id === updatedCompany.id ? updatedCompany : c);
-    return updatedCompany;
+    // ID of 0 indicates a new company
+    if (companyData.id === 0) {
+      const newCompany = { ...companyData, id: Date.now() };
+      companies.push(newCompany);
+      return newCompany;
+    }
+    // Existing ID means update
+    companies = companies.map(c => c.id === companyData.id ? companyData : c);
+    return companyData;
   },
 
   addReview: async(companyId: number, review: Omit<Review, 'id' | 'date'>): Promise<Company> => {
@@ -120,17 +156,37 @@ export const api = {
     return updatedCompany;
   },
 
-  postJob: async(jobData: Omit<Job, 'id' | 'applicants' | 'shortlisted' | 'rejected'>): Promise<Job> => {
+  saveJob: async(jobData: Job | Omit<Job, 'id' | 'applicants' | 'shortlisted' | 'rejected'>): Promise<Job> => {
     await delay(200);
-    const newJob: Job = {
-        ...jobData,
+    if ('id' in jobData && jobData.id) { // Update existing job
+        const index = jobs.findIndex(j => j.id === jobData.id);
+        if (index === -1) throw new Error("Job not found");
+        const fullJob = jobs[index];
+        const updatedJob = { ...fullJob, ...jobData };
+        jobs[index] = updatedJob;
+        return updatedJob;
+    } else { // Create new job
+        const newJob: Job = {
+            ...(jobData as Omit<Job, 'id' | 'applicants' | 'shortlisted' | 'rejected'>),
+            id: Date.now(),
+            applicants: [],
+            shortlisted: [],
+            rejected: []
+        };
+        jobs = [newJob, ...jobs];
+        return newJob;
+    }
+  },
+  
+  addBlogPost: async(postData: Omit<BlogPost, 'id' | 'timestamp'>): Promise<BlogPost> => {
+    await delay(200);
+    const newPost: BlogPost = {
+        ...postData,
         id: Date.now(),
-        applicants: [],
-        shortlisted: [],
-        rejected: []
+        timestamp: new Date().toISOString(),
     };
-    jobs = [newJob, ...jobs];
-    return newJob;
+    blogPosts = [newPost, ...blogPosts];
+    return newPost;
   },
 
   // --- ADMIN ACTIONS ---

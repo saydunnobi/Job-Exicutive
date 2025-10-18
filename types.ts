@@ -66,3 +66,13 @@ export interface Admin {
   email: string;
   password?: string; // Added for auth
 }
+
+export interface BlogPost {
+  id: number;
+  authorId: number;
+  authorName: string;
+  authorRole: 'seeker' | 'company' | 'admin';
+  authorPhotoUrl: string;
+  content: string;
+  timestamp: string;
+}

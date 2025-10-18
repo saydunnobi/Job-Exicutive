@@ -31,6 +31,8 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin, error }) => {
       quickEmail = 'alex.doe@example.com';
     } else if (role === 'company') {
       quickEmail = 'contact@innovate.com';
+    } else if (role === 'admin') {
+      quickEmail = 'admin@jobexecutive.com';
     }
     
     setIsSubmitting(true);
@@ -50,7 +52,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin, error }) => {
       <div className="max-w-md w-full space-y-8 p-10 bg-white shadow-lg rounded-xl">
         <div>
           <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
-            Welcome to JobFlow
+            Welcome to Job Executive
           </h2>
           <p className="mt-2 text-center text-sm text-gray-600">
             For demonstration, use the quick login buttons below.
@@ -73,6 +75,14 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin, error }) => {
               className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-secondary hover:bg-secondary-focus focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-secondary disabled:bg-green-300"
             >
               Login as Company
+            </button>
+             <button
+              type="button"
+              onClick={() => handleQuickLogin('admin')}
+              disabled={isSubmitting}
+              className="group relative w-full flex justify-center py-2 px-4 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:bg-gray-200"
+            >
+              Login as Admin
             </button>
         </div>
 

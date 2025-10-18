@@ -1,13 +1,16 @@
-import React, { useState } from 'react';
-import { Job, JobType, LocationType } from '../types';
+import React, { useState, useEffect } from 'react';
+import { Job, Company, JobType, LocationType } from '../types';
 
 interface PostJobFormProps {
-  companyId: number;
-  onSave: (job: Omit<Job, 'id' | 'applicants' | 'shortlisted' | 'rejected'>) => void;
+  onSave: (job: Job | Omit<Job, 'id' | 'applicants' | 'shortlisted' | 'rejected'>) => void;
   onCancel: () => void;
+  companyId?: number; // Provided by CompanyDashboard
+  companies?: Company[]; // Provided by AdminDashboard
+  jobToEdit?: Job | null; // Provided for editing
 }
 
-const PostJobForm: React.FC<PostJobFormProps> = ({ companyId, onSave, onCancel }) => {
+const PostJobForm: React.FC<PostJobFormProps> = ({ companyId, companies, jobToEdit, onSave, onCancel }) => {
+  
   const [formData, setFormData] = useState({
     title: '',
     description: '',
@@ -17,7 +20,25 @@ const PostJobForm: React.FC<PostJobFormProps> = ({ companyId, onSave, onCancel }
     salaryMax: 70000,
     jobType: JobType.FullTime,
     locationType: LocationType.Onsite,
+    companyId: companyId || (companies && companies.length > 0 ? companies[0].id : 0),
   });
+
+  useEffect(() => {
+    if (jobToEdit) {
+      setFormData({
+        title: jobToEdit.title,
+        description: jobToEdit.description,
+        location: jobToEdit.location,
+        experienceLevel: jobToEdit.experienceLevel,
+        salaryMin: jobToEdit.salaryMin,
+        salaryMax: jobToEdit.salaryMax,
+        jobType: jobToEdit.jobType,
+        locationType: jobToEdit.locationType,
+        companyId: jobToEdit.companyId,
+      });
+    }
+  }, [jobToEdit]);
+
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -31,11 +52,30 @@ const PostJobForm: React.FC<PostJobFormProps> = ({ companyId, onSave, onCancel }
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    onSave({ ...formData, companyId });
+    if (jobToEdit) {
+        onSave({ ...formData, id: jobToEdit.id });
+    } else {
+        onSave(formData);
+    }
   };
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
+      {companies && (
+        <div>
+          <label htmlFor="companyId" className="block text-sm font-medium text-gray-700">Company</label>
+          <select 
+            name="companyId" 
+            id="companyId" 
+            value={formData.companyId} 
+            onChange={handleChange} 
+            className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm"
+          >
+            {companies.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+          </select>
+        </div>
+      )}
+
       <div>
         <label htmlFor="title" className="block text-sm font-medium text-gray-700">Job Title</label>
         <input type="text" name="title" id="title" value={formData.title} onChange={handleChange} required className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm" />
@@ -82,7 +122,7 @@ const PostJobForm: React.FC<PostJobFormProps> = ({ companyId, onSave, onCancel }
             Cancel
         </button>
         <button type="submit" className="bg-primary hover:bg-primary-focus text-white font-bold py-2 px-4 rounded-md transition-colors">
-            Post Job
+            {jobToEdit ? 'Save Changes' : 'Post Job'}
         </button>
       </div>
     </form>
