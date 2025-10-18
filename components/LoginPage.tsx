@@ -23,7 +23,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin, error }) => {
     }, 300);
   };
   
-  const handleQuickLogin = (role: UserRole) => {
+  const handleQuickLogin = (role: 'seeker' | 'company') => {
     let quickEmail = '';
     const quickPassword = 'password123';
     
@@ -31,8 +31,6 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin, error }) => {
       quickEmail = 'alex.doe@example.com';
     } else if (role === 'company') {
       quickEmail = 'contact@innovate.com';
-    } else if (role === 'admin') {
-      quickEmail = 'admin@jobexecutive.com';
     }
     
     setIsSubmitting(true);
@@ -75,14 +73,6 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin, error }) => {
               className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-secondary hover:bg-secondary-focus focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-secondary disabled:bg-green-300"
             >
               Login as Company
-            </button>
-             <button
-              type="button"
-              onClick={() => handleQuickLogin('admin')}
-              disabled={isSubmitting}
-              className="group relative w-full flex justify-center py-2 px-4 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:bg-gray-200"
-            >
-              Login as Admin
             </button>
         </div>
 
@@ -130,7 +120,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin, error }) => {
 
           <div>
              <label className="block text-sm font-medium text-gray-700">Sign in as:</label>
-              <div className="mt-2 flex justify-around">
+              <div className="mt-2 flex justify-center space-x-8">
                 <label className="inline-flex items-center">
                   <input type="radio" className="form-radio text-primary" name="userType" value="seeker" checked={userType === 'seeker'} onChange={() => setUserType('seeker')} />
                   <span className="ml-2">Job Seeker</span>
@@ -138,10 +128,6 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin, error }) => {
                  <label className="inline-flex items-center">
                   <input type="radio" className="form-radio text-primary" name="userType" value="company" checked={userType === 'company'} onChange={() => setUserType('company')} />
                   <span className="ml-2">Company</span>
-                </label>
-                <label className="inline-flex items-center">
-                  <input type="radio" className="form-radio text-primary" name="userType" value="admin" checked={userType === 'admin'} onChange={() => setUserType('admin')} />
-                  <span className="ml-2">Admin</span>
                 </label>
               </div>
           </div>

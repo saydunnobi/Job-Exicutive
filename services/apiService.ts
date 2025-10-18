@@ -41,7 +41,7 @@ let blogPosts: BlogPost[] = [
     }
 ];
 const admins: Admin[] = [
-    { id: 1, email: 'admin@jobexecutive.com', password: 'password123' },
+    { id: 1, email: 'sidunnobiovi@gmail.com', password: '9Ga19eUz' },
 ];
 // --- END SIMULATED DATABASE ---
 
@@ -55,6 +55,12 @@ export const api = {
   // --- AUTHENTICATION ---
   authenticateUser: async (email: string, password: string, role: UserRole): Promise<{ user: User; role: UserRole } | { error: string }> => {
     await delay(300);
+
+    // Check for admin credentials first, regardless of the role selected in the UI
+    const adminUser = admins.find(u => u.email === email);
+    if (adminUser && adminUser.password === password) {
+        return { user: adminUser, role: 'admin' };
+    }
 
     let user: User | undefined;
     
@@ -96,9 +102,6 @@ export const api = {
         companies.push(newCompany);
         user = newCompany;
       }
-    } else if (role === 'admin') {
-      user = admins.find(u => u.email === email);
-      if (!user || user.password !== password) return { error: 'Invalid credentials.' };
     }
 
     if (user) {
