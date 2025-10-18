@@ -106,7 +106,7 @@ const App: React.FC = () => {
         setJobs(prev => [newJob, ...prev]);
     }
     
-    const handleAdminDelete = async (type: 'job' | 'company' | 'seeker', id: number) => {
+    const handleAdminDelete = async (type: 'job' | 'company' | 'seeker' | 'blogPost', id: number) => {
         if (await api.deleteEntity(type, id)) {
             if (type === 'job') setJobs(jobs.filter(j => j.id !== id));
             if (type === 'seeker') setSeekers(seekers.filter(s => s.id !== id));
@@ -171,6 +171,17 @@ const App: React.FC = () => {
         setBlogPosts(prev => [savedPost, ...prev]);
     };
 
+    const handleUpdateBlogPost = async (postId: number, content: string) => {
+        const updatedPost = await api.updateBlogPost(postId, content);
+        setBlogPosts(posts => posts.map(p => p.id === postId ? updatedPost : p));
+    };
+
+    const handleDeleteBlogPost = async (postId: number) => {
+        if (await api.deleteEntity('blogPost', postId)) {
+            setBlogPosts(posts => posts.filter(p => p.id !== postId));
+        }
+    };
+
     if (isLoading) {
         return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
     }
@@ -223,8 +234,8 @@ const App: React.FC = () => {
     }
 
     return (
-        <div className="bg-base-200 min-h-screen">
-            <header className="bg-white shadow-sm sticky top-0 z-40">
+        <div className="min-h-screen">
+            <header className="bg-white/80 backdrop-blur-sm shadow-sm sticky top-0 z-40">
                 <nav className="container mx-auto px-4 sm:px-6 lg:px-8">
                     <div className="flex justify-between items-center h-16">
                         <div className="flex-shrink-0">
@@ -243,7 +254,7 @@ const App: React.FC = () => {
                 </nav>
             </header>
             
-             <div className="sm:hidden p-2 bg-white shadow-md">
+             <div className="sm:hidden p-2 bg-white/80 backdrop-blur-sm shadow-md">
                  <div className="flex justify-around">
                      <NavButton isActive={activeView === 'dashboard'} onClick={() => setActiveView('dashboard')} icon={<BriefcaseIcon className="h-5 w-5"/>}><span className="sr-only">Dashboard</span></NavButton>
                      <NavButton isActive={activeView === 'blog'} onClick={() => setActiveView('blog')} icon={<NewspaperIcon className="h-5 w-5"/>}><span className="sr-only">Blog</span></NavButton>
@@ -254,6 +265,9 @@ const App: React.FC = () => {
                 <BlogPage 
                     posts={blogPosts}
                     onAddPost={handleAddBlogPost}
+                    onUpdatePost={handleUpdateBlogPost}
+                    onDeletePost={handleDeleteBlogPost}
+                    currentUserRole={currentUserRole}
                     currentUserName={currentUserName}
                     currentUserPhoto={currentUserPhoto}
                 />

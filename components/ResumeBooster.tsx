@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { boostResume } from '../services/geminiService';
 import { SparklesIcon } from './icons';
@@ -30,7 +29,7 @@ const ResumeBooster: React.FC = () => {
   };
 
   return (
-    <div className="bg-white p-6 rounded-lg shadow-md border border-gray-200">
+    <div className="bg-white/80 backdrop-blur-sm p-6 rounded-xl shadow-interactive">
       <div className="flex items-center mb-4">
         <SparklesIcon className="h-8 w-8 text-accent mr-3" />
         <h3 className="text-xl font-bold text-neutral">AI Resume Booster</h3>
@@ -43,7 +42,7 @@ const ResumeBooster: React.FC = () => {
         value={inputText}
         onChange={(e) => setInputText(e.target.value)}
         placeholder="e.g., I worked on a team to build a web app using React."
-        className="w-full h-32 p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-primary focus:border-transparent"
+        className="w-full h-32 p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-primary focus:border-transparent bg-white/50"
         disabled={isLoading}
       />
 

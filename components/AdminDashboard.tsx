@@ -17,7 +17,7 @@ interface AdminDashboardProps {
 }
 
 const StatCard: React.FC<{ title: string; value: number; icon: React.ReactNode }> = ({ title, value, icon }) => (
-    <div className="bg-white p-6 rounded-lg shadow-md border flex items-center">
+    <div className="bg-white/80 backdrop-blur-sm p-6 rounded-xl shadow-interactive hover:shadow-interactive-lg hover:-translate-y-1 transition-transform-shadow duration-300 flex items-center">
         <div className="p-3 rounded-full bg-primary/10 mr-4">{icon}</div>
         <div>
             <p className="text-sm font-medium text-gray-500">{title}</p>
@@ -123,7 +123,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ jobs, companies, seeker
 };
 
 const TableSection: React.FC<{ title: string, onAdd: () => void, children: React.ReactNode }> = ({ title, onAdd, children }) => (
-    <div className="bg-white p-6 rounded-lg shadow-md border">
+    <div className="bg-white/80 backdrop-blur-sm p-6 rounded-xl shadow-interactive">
         <div className="flex justify-between items-center mb-4">
             <h3 className="text-xl font-bold text-neutral">{title}</h3>
             <button onClick={onAdd} className="flex items-center bg-primary hover:bg-primary-focus text-white font-bold py-2 px-4 rounded-md transition-colors">
@@ -135,7 +135,7 @@ const TableSection: React.FC<{ title: string, onAdd: () => void, children: React
 );
 
 const TableRow: React.FC<{ title: string, subtitle?: string, onEdit: () => void, onDelete: () => void }> = ({ title, subtitle, onEdit, onDelete }) => (
-    <div className="flex justify-between items-center p-2 rounded hover:bg-gray-50">
+    <div className="flex justify-between items-center p-2 rounded hover:bg-gray-50/50">
         <div>
             <p className="font-semibold">{title}</p>
             <p className="text-sm text-gray-500">{subtitle}</p>

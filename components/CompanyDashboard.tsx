@@ -36,7 +36,7 @@ const CompanyDashboard: React.FC<CompanyDashboardProps> = ({ company, jobs, seek
 
   return (
     <main className="container mx-auto p-4 md:p-8 space-y-8">
-      <div className="bg-white p-6 rounded-lg shadow-md border relative">
+      <div className="bg-white/80 backdrop-blur-sm p-6 rounded-xl shadow-interactive relative">
         <button 
           onClick={() => setIsEditModalOpen(true)}
           className="absolute top-4 right-4 p-2 text-gray-500 hover:text-secondary transition-colors"
@@ -53,7 +53,7 @@ const CompanyDashboard: React.FC<CompanyDashboardProps> = ({ company, jobs, seek
         </div>
       </div>
       
-      <div className="bg-white p-6 rounded-lg shadow-md border">
+      <div className="bg-white/80 backdrop-blur-sm p-6 rounded-xl shadow-interactive">
         <div className="flex justify-between items-center mb-4">
             <h3 className="text-xl font-bold text-neutral flex items-center">
               <BriefcaseIcon className="h-6 w-6 mr-2" />
@@ -69,7 +69,7 @@ const CompanyDashboard: React.FC<CompanyDashboardProps> = ({ company, jobs, seek
         </div>
         <div className="space-y-4">
           {companyJobs.length > 0 ? companyJobs.map(job => (
-            <div key={job.id} className="p-4 border rounded-lg hover:shadow-sm">
+            <div key={job.id} className="p-4 border rounded-lg hover:shadow-sm bg-white/50">
               <div className="flex justify-between items-center">
                 <div>
                   <h4 className="font-bold text-lg">{job.title}</h4>

@@ -46,8 +46,8 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin, error }) => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-md w-full space-y-8 p-10 bg-white shadow-lg rounded-xl">
+    <div className="min-h-screen flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+      <div className="max-w-md w-full space-y-8 p-10 bg-white/80 backdrop-blur-md shadow-interactive-lg rounded-2xl border border-white/50">
         <div>
           <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
             Welcome to Job Executive
@@ -81,7 +81,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin, error }) => {
                 <div className="w-full border-t border-gray-300" />
             </div>
             <div className="relative flex justify-center text-sm">
-                <span className="bg-white px-2 text-gray-500">Or sign in manually</span>
+                <span className="px-2 text-gray-500 bg-white/80 rounded-full">Or sign in manually</span>
             </div>
         </div>
 

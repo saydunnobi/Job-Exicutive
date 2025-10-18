@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Job, Company, JobType, LocationType } from '../types';
 import { BriefcaseIcon, BuildingOfficeIcon, MapPinIcon, CurrencyDollarIcon, ClockIcon, GlobeAltIcon } from './icons';
@@ -13,9 +12,9 @@ interface JobCardProps {
 
 const JobCard: React.FC<JobCardProps> = ({ job, company, onApply, onViewDetails, isApplied }) => {
   return (
-    <div className="bg-white rounded-lg shadow-md hover:shadow-xl transition-shadow duration-300 p-6 border border-gray-200 flex flex-col">
+    <div className="bg-white/80 backdrop-blur-sm rounded-xl shadow-interactive hover:shadow-interactive-lg hover:-translate-y-1 transition-transform-shadow duration-300 p-6 flex flex-col">
       <div className="flex items-start mb-4">
-        <img src={company.logo} alt={`${company.name} logo`} className="h-16 w-16 rounded-full mr-4 object-cover border-2 border-primary-focus" />
+        <img src={company.logo} alt={`${company.name} logo`} className="h-16 w-16 rounded-full mr-4 object-cover border-2 border-primary" />
         <div>
           <h3 className="text-xl font-bold text-neutral">{job.title}</h3>
           <p className="text-primary font-semibold">{company.name}</p>
@@ -38,8 +37,8 @@ const JobCard: React.FC<JobCardProps> = ({ job, company, onApply, onViewDetails,
       </div>
 
       <div className="flex flex-wrap gap-2 mb-6">
-        <span className="bg-primary/10 text-primary text-xs font-semibold px-2.5 py-1 rounded-full">{job.jobType}</span>
-        <span className="bg-secondary/10 text-secondary text-xs font-semibold px-2.5 py-1 rounded-full">{job.locationType}</span>
+        <span className="bg-blue-100 text-blue-800 text-xs font-semibold px-2.5 py-1 rounded-full">{job.jobType}</span>
+        <span className="bg-teal-100 text-teal-800 text-xs font-semibold px-2.5 py-1 rounded-full">{job.locationType}</span>
       </div>
 
       <div className="flex items-center justify-between mt-auto">

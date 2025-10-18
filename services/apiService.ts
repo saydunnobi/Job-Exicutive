@@ -191,12 +191,27 @@ export const api = {
     blogPosts = [newPost, ...blogPosts];
     return newPost;
   },
+  
+  updateBlogPost: async(postId: number, content: string): Promise<BlogPost> => {
+    await delay(200);
+    let updatedPost: BlogPost | undefined;
+    blogPosts = blogPosts.map(p => {
+        if (p.id === postId) {
+            updatedPost = { ...p, content };
+            return updatedPost;
+        }
+        return p;
+    });
+    if (!updatedPost) throw new Error("Post not found");
+    return updatedPost;
+  },
 
   // --- ADMIN ACTIONS ---
-  deleteEntity: async(type: 'job' | 'company' | 'seeker', id: number): Promise<boolean> => {
+  deleteEntity: async(type: 'job' | 'company' | 'seeker' | 'blogPost', id: number): Promise<boolean> => {
     await delay(300);
     if (type === 'job') jobs = jobs.filter(j => j.id !== id);
     if (type === 'seeker') seekers = seekers.filter(s => s.id !== id);
+    if (type === 'blogPost') blogPosts = blogPosts.filter(p => p.id !== id);
     if (type === 'company') {
         companies = companies.filter(c => c.id !== id);
         // Also remove jobs associated with that company

@@ -86,7 +86,7 @@ const SeekerDashboard: React.FC<SeekerDashboardProps> = ({ seeker, jobs, compani
         </div>
         
         <div className="lg:col-span-1 space-y-8">
-           <div className="bg-white p-6 rounded-lg shadow-md border relative">
+           <div className="bg-white/80 backdrop-blur-sm p-6 rounded-xl shadow-interactive relative">
               <button 
                 onClick={() => setIsEditModalOpen(true)}
                 className="absolute top-4 right-4 p-2 text-gray-500 hover:text-primary transition-colors"
