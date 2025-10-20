@@ -50,6 +50,13 @@ export interface Company {
   jobs: number[]; // array of job ids
 }
 
+export interface JobAlertsPreferences {
+  keywords: string[];
+  jobTypes: JobType[];
+  locationTypes: LocationType[];
+  minSalary: number;
+}
+
 export interface JobSeeker {
   id: number;
   name: string;
@@ -61,6 +68,8 @@ export interface JobSeeker {
   resumeUrl: string; // url to pdf
   expectedSalary: number;
   appliedJobs: number[]; // array of job ids
+  jobAlertsEnabled: boolean;
+  jobAlertsPreferences: JobAlertsPreferences;
 }
 
 export interface Admin {

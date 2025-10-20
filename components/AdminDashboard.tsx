@@ -26,7 +26,25 @@ const StatCard: React.FC<{ title: string; value: number; icon: React.ReactNode }
     </div>
 );
 
-const emptySeeker: JobSeeker = { id: 0, name: '', email: '', password: 'password123', phone: '', photoUrl: '', skills: [], resumeUrl: '', expectedSalary: 0, appliedJobs: [] };
+const emptySeeker: JobSeeker = { 
+    id: 0, 
+    name: '', 
+    email: '', 
+    password: 'password123', 
+    phone: '', 
+    photoUrl: '', 
+    skills: [], 
+    resumeUrl: '', 
+    expectedSalary: 0, 
+    appliedJobs: [],
+    jobAlertsEnabled: false,
+    jobAlertsPreferences: {
+        keywords: [],
+        jobTypes: [],
+        locationTypes: [],
+        minSalary: 0,
+    }
+};
 const emptyCompany: Company = { id: 0, name: '', email: '', password: 'password123', logo: '', description: '', website: '', contactInfo: '', officeAddress: '', reviews: [], jobs: [] };
 
 const AdminDashboard: React.FC<AdminDashboardProps> = ({ jobs, companies, seekers, onDelete, onSaveSeeker, onSaveCompany, onSaveJob }) => {

@@ -8,8 +8,44 @@ import { Job, Company, JobSeeker, Admin, Review, JobType, LocationType, BlogPost
 
 // --- SIMULATED DATABASE ---
 let seekers: JobSeeker[] = [
-    { id: 101, name: 'Alex Doe', email: 'alex.doe@example.com', password: 'password123', phone: '123-456-7890', photoUrl: 'https://i.pravatar.cc/150?u=alex', skills: ['React', 'TypeScript', 'Node.js'], resumeUrl: '#', expectedSalary: 90000, appliedJobs: [1] },
-    { id: 102, name: 'Brenda Smith', email: 'brenda.smith@example.com', password: 'password123', phone: '234-567-8901', photoUrl: 'https://i.pravatar.cc/150?u=brenda', skills: ['Vue', 'JavaScript', 'CSS'], resumeUrl: '#', expectedSalary: 80000, appliedJobs: [] },
+    { 
+      id: 101, 
+      name: 'Alex Doe', 
+      email: 'alex.doe@example.com', 
+      password: 'password123', 
+      phone: '123-456-7890', 
+      photoUrl: 'https://i.pravatar.cc/150?u=alex', 
+      skills: ['React', 'TypeScript', 'Node.js'], 
+      resumeUrl: '#', 
+      expectedSalary: 90000, 
+      appliedJobs: [1],
+      jobAlertsEnabled: true,
+      jobAlertsPreferences: {
+          keywords: ['React', 'TypeScript', 'Node.js'],
+          jobTypes: [JobType.FullTime],
+          locationTypes: [LocationType.Hybrid, LocationType.Remote],
+          minSalary: 85000,
+      }
+    },
+    { 
+      id: 102, 
+      name: 'Brenda Smith', 
+      email: 'brenda.smith@example.com', 
+      password: 'password123', 
+      phone: '234-567-8901', 
+      photoUrl: 'https://i.pravatar.cc/150?u=brenda', 
+      skills: ['Vue', 'JavaScript', 'CSS'], 
+      resumeUrl: '#', 
+      expectedSalary: 80000, 
+      appliedJobs: [],
+      jobAlertsEnabled: false,
+      jobAlertsPreferences: {
+          keywords: ['Vue', 'JavaScript', 'CSS'],
+          jobTypes: [],
+          locationTypes: [],
+          minSalary: 70000,
+      }
+    },
 ];
 let companies: Company[] = [
     { id: 201, name: 'Innovate Inc.', email: 'contact@innovate.com', password: 'password123', logo: 'https://i.pravatar.cc/150?u=innovate', description: 'A leading tech company.', website: 'https://innovate.com', contactInfo: '123- Innovate St.', officeAddress: '123 Tech Park, Silicon Valley, CA', reviews: [
@@ -90,6 +126,13 @@ export const api = {
           resumeUrl: '',
           expectedSalary: 0,
           appliedJobs: [],
+          jobAlertsEnabled: false,
+          jobAlertsPreferences: {
+              keywords: [],
+              jobTypes: [],
+              locationTypes: [],
+              minSalary: 0,
+          }
         };
         seekers.push(newSeeker);
         user = newSeeker;

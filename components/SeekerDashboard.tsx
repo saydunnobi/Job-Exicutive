@@ -7,6 +7,7 @@ import ResumeBooster from './ResumeBooster';
 import LeaveReviewForm from './LeaveReviewForm';
 import JobSeekerProfileEdit from './JobSeekerProfileEdit';
 import { PencilIcon, MagnifyingGlassIcon } from './icons';
+import JobAlertsManager from './JobAlertsManager';
 
 interface SeekerDashboardProps {
   seeker: JobSeeker;
@@ -175,6 +176,7 @@ const SeekerDashboard: React.FC<SeekerDashboardProps> = ({ seeker, jobs, compani
               <img src={seeker.photoUrl} alt={seeker.name} className="h-24 w-24 rounded-full mx-auto mb-4 border-4 border-primary"/>
               <p className="text-center text-gray-600">{seeker.email}</p>
           </div>
+          <JobAlertsManager seeker={seeker} onSave={onSaveProfile} />
           <ResumeBooster />
         </div>
       </div>
