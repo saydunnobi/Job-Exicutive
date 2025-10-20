@@ -263,6 +263,16 @@ const App: React.FC = () => {
         setBlogPosts(posts => posts.map(p => p.id === postId ? updatedPost : p));
     };
 
+    const handleUpdateComment = async (postId: number, commentId: number, content: string) => {
+        const updatedPost = await api.updateComment(postId, commentId, content);
+        setBlogPosts(posts => posts.map(p => p.id === postId ? updatedPost : p));
+    };
+
+    const handleDeleteComment = async (postId: number, commentId: number) => {
+        const updatedPost = await api.deleteComment(postId, commentId);
+        setBlogPosts(posts => posts.map(p => p.id === postId ? updatedPost : p));
+    };
+
 
     if (isLoading) {
         return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
@@ -352,6 +362,8 @@ const App: React.FC = () => {
                     onDeletePost={handleDeleteBlogPost}
                     onPostReaction={handlePostReaction}
                     onAddComment={handleAddComment}
+                    onUpdateComment={handleUpdateComment}
+                    onDeleteComment={handleDeleteComment}
                     currentUserId={currentUser.id}
                     currentUserRole={currentUserRole}
                     currentUserName={currentUserName}

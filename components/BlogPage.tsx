@@ -10,6 +10,8 @@ interface BlogPageProps {
   onDeletePost: (postId: number) => Promise<void>;
   onPostReaction: (postId: number, reactionType: ReactionType) => void;
   onAddComment: (postId: number, content: string) => Promise<void>;
+  onUpdateComment: (postId: number, commentId: number, content: string) => Promise<void>;
+  onDeleteComment: (postId: number, commentId: number) => Promise<void>;
   currentUserId: number;
   currentUserRole: 'seeker' | 'company' | 'admin';
   currentUserName: string;
@@ -25,13 +27,17 @@ interface PostCardProps {
     onDelete: () => void;
     onReaction: (postId: number, reactionType: ReactionType) => void;
     onAddComment: (postId: number, content: string) => Promise<void>;
+    onUpdateComment: (postId: number, commentId: number, content: string) => Promise<void>;
+    onDeleteCommentClick: (comment: Comment) => void;
     isNew?: boolean;
 }
 
-const PostCard: React.FC<PostCardProps> = ({ post, currentUserId, currentUserRole, currentUserPhoto, onEdit, onDelete, onReaction, onAddComment, isNew }) => {
+const PostCard: React.FC<PostCardProps> = ({ post, currentUserId, currentUserRole, currentUserPhoto, onEdit, onDelete, onReaction, onAddComment, onUpdateComment, onDeleteCommentClick, isNew }) => {
     const [showComments, setShowComments] = useState(false);
     const [commentText, setCommentText] = useState('');
     const [isSubmittingComment, setIsSubmittingComment] = useState(false);
+    const [editingComment, setEditingComment] = useState<Comment | null>(null);
+    const [editedCommentContent, setEditedCommentContent] = useState('');
 
     const reactionCounts = useMemo(() => ({
         like: post.reactions.filter(r => r.type === 'like').length,
@@ -51,6 +57,14 @@ const PostCard: React.FC<PostCardProps> = ({ post, currentUserId, currentUserRol
         await onAddComment(post.id, commentText);
         setCommentText('');
         setIsSubmittingComment(false);
+    };
+
+    const handleUpdateCommentSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!editingComment || !editedCommentContent.trim()) return;
+        await onUpdateComment(post.id, editingComment.id, editedCommentContent);
+        setEditingComment(null);
+        setEditedCommentContent('');
     };
 
     return (
@@ -111,11 +125,45 @@ const PostCard: React.FC<PostCardProps> = ({ post, currentUserId, currentUserRol
                         <div key={comment.id} className="flex space-x-3">
                             <img src={comment.authorPhotoUrl} alt={comment.authorName} className="h-9 w-9 rounded-full object-cover flex-shrink-0" />
                             <div className="flex-grow bg-gray-100/80 rounded-lg p-3">
-                                <div className="flex items-baseline space-x-2">
-                                    <p className="font-semibold text-sm text-neutral">{comment.authorName}</p>
-                                    <p className="text-xs text-gray-500">· {new Date(comment.timestamp).toLocaleString()}</p>
-                                </div>
-                                <p className="text-sm text-gray-800">{comment.content}</p>
+                                {editingComment?.id === comment.id ? (
+                                    <form onSubmit={handleUpdateCommentSubmit}>
+                                        <textarea
+                                            value={editedCommentContent}
+                                            onChange={(e) => setEditedCommentContent(e.target.value)}
+                                            className="w-full p-2 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-primary focus:border-transparent transition bg-white/50"
+                                            rows={2}
+                                            autoFocus
+                                        />
+                                        <div className="flex justify-end space-x-2 mt-2">
+                                            <button type="button" onClick={() => setEditingComment(null)} className="text-sm bg-gray-200 hover:bg-gray-300 text-black font-bold py-1 px-3 rounded-md transition-colors">
+                                                Cancel
+                                            </button>
+                                            <button type="submit" className="text-sm bg-primary hover:bg-primary-focus text-white font-bold py-1 px-3 rounded-md transition-colors">
+                                                Save
+                                            </button>
+                                        </div>
+                                    </form>
+                                ) : (
+                                    <>
+                                        <div className="flex justify-between items-start">
+                                            <div className="flex items-baseline space-x-2">
+                                                <p className="font-semibold text-sm text-neutral">{comment.authorName}</p>
+                                                <p className="text-xs text-gray-500">· {new Date(comment.timestamp).toLocaleString()}</p>
+                                            </div>
+                                            {currentUserRole === 'admin' && (
+                                                <div className="flex items-center space-x-1">
+                                                    <button onClick={() => { setEditingComment(comment); setEditedCommentContent(comment.content); }} className="text-gray-400 hover:text-primary p-1 rounded-full text-xs" aria-label="Edit Comment">
+                                                        <PencilIcon className="h-4 w-4"/>
+                                                    </button>
+                                                    <button onClick={() => onDeleteCommentClick(comment)} className="text-gray-400 hover:text-red-600 p-1 rounded-full text-xs" aria-label="Delete Comment">
+                                                        <TrashIcon className="h-4 w-4"/>
+                                                    </button>
+                                                </div>
+                                            )}
+                                        </div>
+                                        <p className="text-sm text-gray-800 mt-1">{comment.content}</p>
+                                    </>
+                                )}
                             </div>
                         </div>
                     ))}
@@ -147,12 +195,13 @@ const PostCard: React.FC<PostCardProps> = ({ post, currentUserId, currentUserRol
 };
 
 
-const BlogPage: React.FC<BlogPageProps> = ({ posts, onAddPost, onUpdatePost, onDeletePost, onPostReaction, onAddComment, currentUserId, currentUserRole, currentUserName, currentUserPhoto }) => {
+const BlogPage: React.FC<BlogPageProps> = ({ posts, onAddPost, onUpdatePost, onDeletePost, onPostReaction, onAddComment, onUpdateComment, onDeleteComment, currentUserId, currentUserRole, currentUserName, currentUserPhoto }) => {
     const [content, setContent] = useState('');
     const [isPosting, setIsPosting] = useState(false);
     const [editingPost, setEditingPost] = useState<BlogPost | null>(null);
     const [editedContent, setEditedContent] = useState('');
     const [deletingPost, setDeletingPost] = useState<BlogPost | null>(null);
+    const [deletingCommentInfo, setDeletingCommentInfo] = useState<{ postId: number; comment: Comment } | null>(null);
     
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -180,6 +229,12 @@ const BlogPage: React.FC<BlogPageProps> = ({ posts, onAddPost, onUpdatePost, onD
         if (!deletingPost) return;
         await onDeletePost(deletingPost.id);
         setDeletingPost(null);
+    };
+
+    const handleDeleteCommentConfirm = async () => {
+        if (!deletingCommentInfo) return;
+        await onDeleteComment(deletingCommentInfo.postId, deletingCommentInfo.comment.id);
+        setDeletingCommentInfo(null);
     };
 
 
@@ -231,6 +286,8 @@ const BlogPage: React.FC<BlogPageProps> = ({ posts, onAddPost, onUpdatePost, onD
                                 onDelete={() => setDeletingPost(post)}
                                 onReaction={onPostReaction}
                                 onAddComment={onAddComment}
+                                onUpdateComment={onUpdateComment}
+                                onDeleteCommentClick={(comment) => setDeletingCommentInfo({ postId: post.id, comment })}
                                 isNew={isNew}
                             />
                         })
@@ -268,6 +325,18 @@ const BlogPage: React.FC<BlogPageProps> = ({ posts, onAddPost, onUpdatePost, onD
                     <div className="mt-6 flex justify-center space-x-4">
                         <button onClick={() => setDeletingPost(null)} className="bg-gray-200 hover:bg-gray-300 text-black font-bold py-2 px-6 rounded-md">Cancel</button>
                         <button onClick={handleDelete} className="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-6 rounded-md">Delete</button>
+                    </div>
+                </div>
+            </Modal>
+            
+            {/* Delete Comment Modal */}
+            <Modal isOpen={!!deletingCommentInfo} onClose={() => setDeletingCommentInfo(null)} title="Confirm Comment Deletion">
+                 <div className="text-center">
+                    <p className="text-lg">Are you sure you want to delete this comment?</p>
+                    <p className="text-sm text-gray-600 mt-2 truncate">"{deletingCommentInfo?.comment.content}"</p>
+                    <div className="mt-6 flex justify-center space-x-4">
+                        <button onClick={() => setDeletingCommentInfo(null)} className="bg-gray-200 hover:bg-gray-300 text-black font-bold py-2 px-6 rounded-md">Cancel</button>
+                        <button onClick={handleDeleteCommentConfirm} className="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-6 rounded-md">Delete</button>
                     </div>
                 </div>
             </Modal>

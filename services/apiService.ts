@@ -270,6 +270,40 @@ export const api = {
     return updatedPost;
   },
 
+  updateComment: async(postId: number, commentId: number, content: string): Promise<BlogPost> => {
+    await delay(200);
+    const postIndex = blogPosts.findIndex(p => p.id === postId);
+    if (postIndex === -1) throw new Error("Post not found");
+
+    const originalPost = blogPosts[postIndex];
+    
+    const updatedComments = originalPost.comments.map(c => {
+        if (c.id === commentId) {
+            return { ...c, content };
+        }
+        return c;
+    });
+
+    const updatedPost = { ...originalPost, comments: updatedComments };
+    blogPosts[postIndex] = updatedPost;
+    
+    return updatedPost;
+  },
+
+  deleteComment: async(postId: number, commentId: number): Promise<BlogPost> => {
+    await delay(200);
+    const postIndex = blogPosts.findIndex(p => p.id === postId);
+    if (postIndex === -1) throw new Error("Post not found");
+    
+    const originalPost = blogPosts[postIndex];
+    const updatedComments = originalPost.comments.filter(c => c.id !== commentId);
+    
+    const updatedPost = { ...originalPost, comments: updatedComments };
+    blogPosts[postIndex] = updatedPost;
+
+    return updatedPost;
+  },
+
   // --- ADMIN ACTIONS ---
   deleteEntity: async(type: 'job' | 'company' | 'seeker' | 'blogPost', id: number): Promise<boolean> => {
     await delay(300);
