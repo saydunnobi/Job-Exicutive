@@ -62,9 +62,17 @@ const CompanyProfileEdit: React.FC<CompanyProfileEditProps> = ({ company, onSave
                     <label htmlFor="website" className="block text-sm font-medium text-gray-700">Website</label>
                     <input type="text" name="website" id="website" value={formData.website} onChange={handleChange} className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm" />
                 </div>
-                 <div>
-                    <label htmlFor="contactInfo" className="block text-sm font-medium text-gray-700">Contact Info</label>
+                <div>
+                    <label htmlFor="email" className="block text-sm font-medium text-gray-700">Contact Email</label>
+                    <input type="email" name="email" id="email" value={formData.email} onChange={handleChange} className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm" />
+                </div>
+                <div>
+                    <label htmlFor="contactInfo" className="block text-sm font-medium text-gray-700">Phone Number / Contact Info</label>
                     <input type="text" name="contactInfo" id="contactInfo" value={formData.contactInfo} onChange={handleChange} className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm" />
+                </div>
+                <div>
+                    <label htmlFor="officeAddress" className="block text-sm font-medium text-gray-700">Office Address</label>
+                    <textarea name="officeAddress" id="officeAddress" value={formData.officeAddress} onChange={handleChange} rows={2} className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm"></textarea>
                 </div>
             </div>
 

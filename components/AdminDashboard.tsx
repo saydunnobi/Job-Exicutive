@@ -27,7 +27,7 @@ const StatCard: React.FC<{ title: string; value: number; icon: React.ReactNode }
 );
 
 const emptySeeker: JobSeeker = { id: 0, name: '', email: '', password: 'password123', phone: '', photoUrl: '', skills: [], resumeUrl: '', expectedSalary: 0, appliedJobs: [] };
-const emptyCompany: Company = { id: 0, name: '', email: '', password: 'password123', logo: '', description: '', website: '', contactInfo: '', reviews: [], jobs: [] };
+const emptyCompany: Company = { id: 0, name: '', email: '', password: 'password123', logo: '', description: '', website: '', contactInfo: '', officeAddress: '', reviews: [], jobs: [] };
 
 const AdminDashboard: React.FC<AdminDashboardProps> = ({ jobs, companies, seekers, onDelete, onSaveSeeker, onSaveCompany, onSaveJob }) => {
     const [modalState, setModalState] = useState<{ type: 'job' | 'company' | 'seeker' | null, item: any | null, mode: 'add' | 'edit' | null }>({ type: null, item: null, mode: null });
@@ -90,7 +90,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ jobs, companies, seeker
                 </TableSection>
                 <TableSection title="Manage Companies" onAdd={() => openModal('company', 'add')}>
                     {companies.map(company => (
-                        <TableRow key={company.id} title={company.name} subtitle={company.email} onEdit={() => openModal('company', 'edit', company)} onDelete={() => openDeleteConfirm('company', company)} />
+                        <TableRow key={company.id} title={company.name} subtitle={company.website} onEdit={() => openModal('company', 'edit', company)} onDelete={() => openDeleteConfirm('company', company)} />
                     ))}
                 </TableSection>
                 <TableSection title="Manage Job Seekers" onAdd={() => openModal('seeker', 'add')}>

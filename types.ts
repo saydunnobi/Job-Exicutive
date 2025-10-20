@@ -44,6 +44,7 @@ export interface Company {
   description: string;
   website: string;
   contactInfo: string;
+  officeAddress: string;
   reviews: Review[];
   jobs: number[]; // array of job ids
 }

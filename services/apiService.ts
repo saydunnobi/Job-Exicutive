@@ -12,11 +12,11 @@ let seekers: JobSeeker[] = [
     { id: 2, name: 'Brenda Smith', email: 'brenda.smith@example.com', password: 'password123', phone: '234-567-8901', photoUrl: 'https://i.pravatar.cc/150?u=brenda', skills: ['Vue', 'JavaScript', 'CSS'], resumeUrl: '#', expectedSalary: 80000, appliedJobs: [] },
 ];
 let companies: Company[] = [
-    { id: 1, name: 'Innovate Inc.', email: 'contact@innovate.com', password: 'password123', logo: 'https://i.pravatar.cc/150?u=innovate', description: 'A leading tech company.', website: 'https://innovate.com', contactInfo: '123- Innovate St.', reviews: [
+    { id: 1, name: 'Innovate Inc.', email: 'contact@innovate.com', password: 'password123', logo: 'https://i.pravatar.cc/150?u=innovate', description: 'A leading tech company.', website: 'https://innovate.com', contactInfo: '123- Innovate St.', officeAddress: '123 Tech Park, Silicon Valley, CA', reviews: [
         { id: 1, reviewerName: 'Brenda Smith', rating: 4.5, comment: 'Great place to work!', date: '2023-10-26' },
         { id: 2, reviewerName: 'External Person', rating: 5, comment: 'Excellent culture and benefits.', date: '2023-10-25' }
     ], jobs: [1, 2] },
-    { id: 2, name: 'Creative Solutions', email: 'hr@creative.com', password: 'password123', logo: 'https://i.pravatar.cc/150?u=creative', description: 'We make creative software.', website: 'https://creative.com', contactInfo: '456- Creative Ave.', reviews: [
+    { id: 2, name: 'Creative Solutions', email: 'hr@creative.com', password: 'password123', logo: 'https://i.pravatar.cc/150?u=creative', description: 'We make creative software.', website: 'https://creative.com', contactInfo: '456- Creative Ave.', officeAddress: '456 Design Plaza, San Francisco, CA', reviews: [
         { id: 3, reviewerName: 'Alex Doe', rating: 3, comment: 'It was okay, long hours.', date: '2023-10-24' }
     ], jobs: [3] },
 ];
@@ -101,6 +101,7 @@ export const api = {
           description: '',
           website: '',
           contactInfo: '',
+          officeAddress: '',
           reviews: [],
           jobs: [],
         };

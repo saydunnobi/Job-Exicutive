@@ -12,6 +12,29 @@ type User = JobSeeker | Company | Admin;
 type UserRole = 'seeker' | 'company' | 'admin';
 type ActiveView = 'dashboard' | 'blog';
 
+const Notification = ({ message, onClose }: { message: string; onClose: () => void }) => {
+    useEffect(() => {
+        const timer = setTimeout(onClose, 5000);
+        return () => clearTimeout(timer);
+    }, [onClose]);
+
+    return (
+        <div className="fixed top-5 right-5 bg-secondary text-white py-3 px-5 rounded-lg shadow-lg z-50 animate-fade-in-down flex items-center space-x-3">
+          <span className="font-bold">Success!</span>
+          <span>{message}</span>
+          <button onClick={onClose} className="text-white/80 hover:text-white font-bold text-2xl leading-none">&times;</button>
+           <style>{`
+            @keyframes fade-in-down {
+              0% { opacity: 0; transform: translateY(-20px); }
+              100% { opacity: 1; transform: translateY(0); }
+            }
+            .animate-fade-in-down { animation: fade-in-down 0.5s ease-out forwards; }
+          `}</style>
+        </div>
+    );
+};
+
+
 const App: React.FC = () => {
     // Data State
     const [seekers, setSeekers] = useState<JobSeeker[]>([]);
@@ -27,6 +50,7 @@ const App: React.FC = () => {
     
     // UI State
     const [activeView, setActiveView] = useState<ActiveView>('dashboard');
+    const [notification, setNotification] = useState<string | null>(null);
 
     // Initial data load
     useEffect(() => {
@@ -99,6 +123,28 @@ const App: React.FC = () => {
     const handleAddReview = async (companyId: number, review: Omit<Review, 'id' | 'date'>) => {
       const updatedCompany = await api.addReview(companyId, review);
       setCompanies(companies.map(c => c.id === companyId ? updatedCompany : c));
+      
+      // Automatically create a blog post from the review
+      if (currentUser && currentUserRole === 'seeker') {
+          const seeker = currentUser as JobSeeker;
+          const company = companies.find(c => c.id === companyId);
+          if (company) {
+              const content = `New review for ${company.name}!\n\nI gave them a ${'★'.repeat(review.rating)}${'☆'.repeat(5 - review.rating)} rating.\n\nMy thoughts: "${review.comment}"`;
+              
+              const newPostData: Omit<BlogPost, 'id' | 'timestamp'> = {
+                  authorId: seeker.id,
+                  authorName: seeker.name,
+                  authorRole: 'seeker',
+                  authorPhotoUrl: seeker.photoUrl,
+                  content,
+              };
+              const savedPost = await api.addBlogPost(newPostData);
+              setBlogPosts(prev => [savedPost, ...prev]);
+              
+              // Show notification
+              setNotification(`Your review for ${company.name} is now live on the blog!`);
+          }
+      }
     }
     
     const handleCompanySaveJob = async (jobData: Omit<Job, 'id' | 'applicants' | 'shortlisted' | 'rejected'>) => {
@@ -235,6 +281,7 @@ const App: React.FC = () => {
 
     return (
         <div className="min-h-screen">
+            {notification && <Notification message={notification} onClose={() => setNotification(null)} />}
             <header className="bg-white/80 backdrop-blur-sm shadow-sm sticky top-0 z-40">
                 <nav className="container mx-auto px-4 sm:px-6 lg:px-8">
                     <div className="flex justify-between items-center h-16">

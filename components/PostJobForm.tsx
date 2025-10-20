@@ -53,7 +53,8 @@ const PostJobForm: React.FC<PostJobFormProps> = ({ companyId, companies, jobToEd
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (jobToEdit) {
-        onSave({ ...formData, id: jobToEdit.id });
+        // FIX: Spread jobToEdit first to preserve properties like applicants, shortlisted, etc.
+        onSave({ ...jobToEdit, ...formData });
     } else {
         onSave(formData);
     }

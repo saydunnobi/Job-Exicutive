@@ -18,11 +18,13 @@ interface PostCardProps {
     currentUserRole: 'seeker' | 'company' | 'admin';
     onEdit: () => void;
     onDelete: () => void;
+    isNew?: boolean;
 }
 
-const PostCard: React.FC<PostCardProps> = ({ post, currentUserRole, onEdit, onDelete }) => {
+const PostCard: React.FC<PostCardProps> = ({ post, currentUserRole, onEdit, onDelete, isNew }) => {
     return (
-        <div className="bg-white/80 backdrop-blur-sm p-5 rounded-xl shadow-interactive hover:shadow-interactive-lg hover:-translate-y-1 transition-transform-shadow duration-300 flex space-x-4 animate-fade-in-up">
+        <div className="relative bg-white/80 backdrop-blur-sm p-5 rounded-xl shadow-interactive hover:shadow-interactive-lg hover:-translate-y-1 transition-transform-shadow duration-300 flex space-x-4 animate-fade-in-up">
+            {isNew && <span className="absolute top-2 right-2 bg-accent text-white text-xs font-bold px-2 py-0.5 rounded-full animate-pulse">NEW</span>}
             <img src={post.authorPhotoUrl} alt={post.authorName} className="h-12 w-12 rounded-full object-cover flex-shrink-0" />
             <div className="flex-grow">
                 <div className="flex justify-between items-start">
@@ -118,16 +120,21 @@ const BlogPage: React.FC<BlogPageProps> = ({ posts, onAddPost, onUpdatePost, onD
                 <div className="space-y-6">
                     <h2 className="text-2xl font-bold text-neutral">Community Feed</h2>
                     {posts.length > 0 ? (
-                        posts.map(post => <PostCard 
-                            key={post.id} 
-                            post={post} 
-                            currentUserRole={currentUserRole}
-                            onEdit={() => {
-                                setEditingPost(post);
-                                setEditedContent(post.content);
-                            }}
-                            onDelete={() => setDeletingPost(post)}
-                        />)
+                        posts.map((post, index) => {
+                             // A post is considered "new" if it's the latest one and posted within the last 5 minutes.
+                            const isNew = index === 0 && (new Date().getTime() - new Date(post.timestamp).getTime() < 5 * 60 * 1000);
+                            return <PostCard 
+                                key={post.id} 
+                                post={post} 
+                                currentUserRole={currentUserRole}
+                                onEdit={() => {
+                                    setEditingPost(post);
+                                    setEditedContent(post.content);
+                                }}
+                                onDelete={() => setDeletingPost(post)}
+                                isNew={isNew}
+                            />
+                        })
                     ) : (
                         <div className="text-center text-gray-500 py-8 bg-white/80 backdrop-blur-sm rounded-xl shadow-interactive">
                             <p>No posts yet.</p>
