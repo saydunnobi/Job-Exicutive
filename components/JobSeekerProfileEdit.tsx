@@ -78,7 +78,7 @@ const JobSeekerProfileEdit: React.FC<JobSeekerProfileEditProps> = ({ seeker, onS
                 </div>
                  <div className="md:col-span-2">
                     <label htmlFor="skills" className="block text-sm font-medium text-gray-700">Skills (comma-separated)</label>
-                    <input type="text" name="skills" id="skills" value={formData.skills.join(', ')} onChange={handleSkillsChange} className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm" />
+                    <input type="text" name="skills" id="skills" value={(formData.skills || []).join(', ')} onChange={handleSkillsChange} className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm" />
                 </div>
             </div>
 
