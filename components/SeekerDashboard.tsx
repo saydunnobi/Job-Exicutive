@@ -101,6 +101,22 @@ const SeekerDashboard: React.FC<SeekerDashboardProps> = ({ seeker, jobs, compani
   return (
     <main className="container mx-auto p-4 md:p-8">
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div className="lg:col-span-1 space-y-8">
+           <div className="bg-white/80 backdrop-blur-sm p-6 rounded-xl shadow-interactive relative">
+              <button 
+                onClick={() => setIsEditModalOpen(true)}
+                className="absolute top-4 right-4 p-2 text-gray-500 hover:text-primary transition-colors"
+                aria-label="Edit Profile"
+              >
+                <PencilIcon className="h-5 w-5" />
+              </button>
+              <h3 className="text-xl font-bold text-neutral mb-4">Welcome, {seeker.name}!</h3>
+              <img src={seeker.photoUrl} alt={seeker.name} className="h-24 w-24 rounded-full mx-auto mb-4 border-4 border-primary"/>
+              <p className="text-center text-gray-600">{seeker.email}</p>
+          </div>
+          <JobAlertsManager seeker={seeker} onSave={onSaveProfile} />
+          <ResumeBooster />
+        </div>
         <div className="lg:col-span-2">
           <div className="bg-white/80 backdrop-blur-sm p-4 rounded-xl shadow-interactive mb-6">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 items-end">
@@ -161,23 +177,6 @@ const SeekerDashboard: React.FC<SeekerDashboardProps> = ({ seeker, jobs, compani
                 <p className="text-gray-500 mt-2">Try adjusting your search filters.</p>
             </div>
           )}
-        </div>
-        
-        <div className="lg:col-span-1 space-y-8">
-           <div className="bg-white/80 backdrop-blur-sm p-6 rounded-xl shadow-interactive relative">
-              <button 
-                onClick={() => setIsEditModalOpen(true)}
-                className="absolute top-4 right-4 p-2 text-gray-500 hover:text-primary transition-colors"
-                aria-label="Edit Profile"
-              >
-                <PencilIcon className="h-5 w-5" />
-              </button>
-              <h3 className="text-xl font-bold text-neutral mb-4">Welcome, {seeker.name}!</h3>
-              <img src={seeker.photoUrl} alt={seeker.name} className="h-24 w-24 rounded-full mx-auto mb-4 border-4 border-primary"/>
-              <p className="text-center text-gray-600">{seeker.email}</p>
-          </div>
-          <JobAlertsManager seeker={seeker} onSave={onSaveProfile} />
-          <ResumeBooster />
         </div>
       </div>
 
