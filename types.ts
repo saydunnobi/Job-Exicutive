@@ -76,6 +76,15 @@ export interface Reaction {
   type: ReactionType;
 }
 
+export interface Comment {
+  id: number;
+  authorId: number;
+  authorName: string;
+  authorPhotoUrl: string;
+  content: string;
+  timestamp: string;
+}
+
 export interface BlogPost {
   id: number;
   authorId: number;
@@ -85,4 +94,5 @@ export interface BlogPost {
   content: string;
   timestamp: string;
   reactions: Reaction[];
+  comments: Comment[];
 }

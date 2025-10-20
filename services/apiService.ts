@@ -4,7 +4,7 @@
  * This file simulates a backend server and database. In a real-world application,
  * these functions would make network requests (e.g., using fetch) to a REST or GraphQL API.
  */
-import { Job, Company, JobSeeker, Admin, Review, JobType, LocationType, BlogPost, ReactionType, Reaction } from '../types';
+import { Job, Company, JobSeeker, Admin, Review, JobType, LocationType, BlogPost, ReactionType, Reaction, Comment } from '../types';
 
 // --- SIMULATED DATABASE ---
 let seekers: JobSeeker[] = [
@@ -35,6 +35,7 @@ let blogPosts: BlogPost[] = [
         content: 'We are excited to announce we are hiring for several new roles! Check out our open positions for Frontend and Backend developers.',
         timestamp: new Date(Date.now() - 1000 * 60 * 60 * 24).toISOString(), // 1 day ago
         reactions: [],
+        comments: [],
     },
     {
         id: 2,
@@ -45,6 +46,9 @@ let blogPosts: BlogPost[] = [
         content: 'Just had a great interview experience! My tip for fellow developers: always be prepared to talk about a project you are passionate about. It really shows your skills and enthusiasm.',
         timestamp: new Date(Date.now() - 1000 * 60 * 30).toISOString(), // 30 mins ago
         reactions: [],
+        comments: [
+            { id: 1, authorId: 2, authorName: 'Brenda Smith', authorPhotoUrl: 'https://i.pravatar.cc/150?u=brenda', content: 'That\'s a great tip, Alex! Thanks for sharing.', timestamp: new Date(Date.now() - 1000 * 60 * 15).toISOString() }
+        ],
     }
 ];
 const admins: Admin[] = [
@@ -189,13 +193,14 @@ export const api = {
     }
   },
   
-  addBlogPost: async(postData: Omit<BlogPost, 'id' | 'timestamp' | 'reactions'>): Promise<BlogPost> => {
+  addBlogPost: async(postData: Omit<BlogPost, 'id' | 'timestamp' | 'reactions' | 'comments'>): Promise<BlogPost> => {
     await delay(200);
     const newPost: BlogPost = {
         ...postData,
         id: Date.now(),
         timestamp: new Date().toISOString(),
         reactions: [],
+        comments: [],
     };
     blogPosts = [newPost, ...blogPosts];
     return newPost;
@@ -244,6 +249,24 @@ export const api = {
     
     const updatedPost = { ...originalPost, reactions: newReactions };
     blogPosts[postIndex] = updatedPost;
+    return updatedPost;
+  },
+
+  addComment: async(postId: number, commentData: Omit<Comment, 'id' | 'timestamp'>): Promise<BlogPost> => {
+    await delay(200);
+    const postIndex = blogPosts.findIndex(p => p.id === postId);
+    if (postIndex === -1) throw new Error("Post not found");
+
+    const newComment: Comment = {
+      ...commentData,
+      id: Date.now(),
+      timestamp: new Date().toISOString(),
+    };
+    
+    const originalPost = blogPosts[postIndex];
+    const updatedPost = { ...originalPost, comments: [...originalPost.comments, newComment] };
+    blogPosts[postIndex] = updatedPost;
+
     return updatedPost;
   },
 

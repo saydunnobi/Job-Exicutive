@@ -3,7 +3,7 @@ import LoginPage from './components/LoginPage';
 import SeekerDashboard from './components/SeekerDashboard';
 import CompanyDashboard from './components/CompanyDashboard';
 import AdminDashboard from './components/AdminDashboard';
-import { JobSeeker, Company, Admin, Job, Review, BlogPost, ReactionType } from './types';
+import { JobSeeker, Company, Admin, Job, Review, BlogPost, ReactionType, Comment } from './types';
 import { api } from './services/apiService';
 import BlogPage from './components/BlogPage';
 import { BriefcaseIcon, NewspaperIcon } from './components/icons';
@@ -131,7 +131,7 @@ const App: React.FC = () => {
           if (company) {
               const content = `New review for ${company.name}!\n\nI gave them a ${'★'.repeat(review.rating)}${'☆'.repeat(5 - review.rating)} rating.\n\nMy thoughts: "${review.comment}"`;
               
-              const newPostData: Omit<BlogPost, 'id' | 'timestamp' | 'reactions'> = {
+              const newPostData: Omit<BlogPost, 'id' | 'timestamp' | 'reactions' | 'comments'> = {
                   authorId: seeker.id,
                   authorName: seeker.name,
                   authorRole: 'seeker',
@@ -205,7 +205,7 @@ const App: React.FC = () => {
             authorPhotoUrl = (currentUser as Company).logo;
         }
 
-        const newPostData: Omit<BlogPost, 'id' | 'timestamp' | 'reactions'> = {
+        const newPostData: Omit<BlogPost, 'id' | 'timestamp' | 'reactions' | 'comments'> = {
             authorId: currentUser.id,
             authorName,
             authorRole: currentUserRole,
@@ -231,6 +231,35 @@ const App: React.FC = () => {
     const handlePostReaction = async (postId: number, reactionType: ReactionType) => {
         if (!currentUser) return;
         const updatedPost = await api.addOrUpdateReaction(postId, currentUser.id, reactionType);
+        setBlogPosts(posts => posts.map(p => p.id === postId ? updatedPost : p));
+    };
+
+    const handleAddComment = async (postId: number, content: string) => {
+        if (!currentUser || !currentUserRole) return;
+        
+        const authorId = currentUser.id;
+        let authorName = 'User';
+        let authorPhotoUrl = 'https://i.pravatar.cc/150';
+
+        if(currentUserRole === 'seeker') {
+            authorName = (currentUser as JobSeeker).name;
+            authorPhotoUrl = (currentUser as JobSeeker).photoUrl;
+        } else if (currentUserRole === 'company') {
+            authorName = (currentUser as Company).name;
+            authorPhotoUrl = (currentUser as Company).logo;
+        } else { // Admin
+            authorName = 'Admin';
+            authorPhotoUrl = 'https://i.pravatar.cc/150?u=admin';
+        }
+
+        const commentData: Omit<Comment, 'id' | 'timestamp'> = {
+            authorId,
+            authorName,
+            authorPhotoUrl,
+            content
+        };
+
+        const updatedPost = await api.addComment(postId, commentData);
         setBlogPosts(posts => posts.map(p => p.id === postId ? updatedPost : p));
     };
 
@@ -322,6 +351,7 @@ const App: React.FC = () => {
                     onUpdatePost={handleUpdateBlogPost}
                     onDeletePost={handleDeleteBlogPost}
                     onPostReaction={handlePostReaction}
+                    onAddComment={handleAddComment}
                     currentUserId={currentUser.id}
                     currentUserRole={currentUserRole}
                     currentUserName={currentUserName}

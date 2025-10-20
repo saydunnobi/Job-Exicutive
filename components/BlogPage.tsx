@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { BlogPost, ReactionType } from '../types';
+import { BlogPost, ReactionType, Comment } from '../types';
 import Modal from './Modal';
 import { PencilIcon, TrashIcon, HandThumbUpIcon, HeartIcon, HandThumbDownIcon, HandThumbUpIconSolid, HeartIconSolid, HandThumbDownIconSolid } from './icons';
 
@@ -9,6 +9,7 @@ interface BlogPageProps {
   onUpdatePost: (postId: number, content: string) => Promise<void>;
   onDeletePost: (postId: number) => Promise<void>;
   onPostReaction: (postId: number, reactionType: ReactionType) => void;
+  onAddComment: (postId: number, content: string) => Promise<void>;
   currentUserId: number;
   currentUserRole: 'seeker' | 'company' | 'admin';
   currentUserName: string;
@@ -19,14 +20,19 @@ interface PostCardProps {
     post: BlogPost;
     currentUserId: number;
     currentUserRole: 'seeker' | 'company' | 'admin';
+    currentUserPhoto: string; // For comment form
     onEdit: () => void;
     onDelete: () => void;
     onReaction: (postId: number, reactionType: ReactionType) => void;
+    onAddComment: (postId: number, content: string) => Promise<void>;
     isNew?: boolean;
 }
 
-const PostCard: React.FC<PostCardProps> = ({ post, currentUserId, currentUserRole, onEdit, onDelete, onReaction, isNew }) => {
-    
+const PostCard: React.FC<PostCardProps> = ({ post, currentUserId, currentUserRole, currentUserPhoto, onEdit, onDelete, onReaction, onAddComment, isNew }) => {
+    const [showComments, setShowComments] = useState(false);
+    const [commentText, setCommentText] = useState('');
+    const [isSubmittingComment, setIsSubmittingComment] = useState(false);
+
     const reactionCounts = useMemo(() => ({
         like: post.reactions.filter(r => r.type === 'like').length,
         love: post.reactions.filter(r => r.type === 'love').length,
@@ -38,75 +44,110 @@ const PostCard: React.FC<PostCardProps> = ({ post, currentUserId, currentUserRol
         [post.reactions, currentUserId]
     );
 
-    return (
-        <div className="relative bg-white/80 backdrop-blur-sm p-5 rounded-xl shadow-interactive hover:shadow-interactive-lg hover:-translate-y-1 transition-transform-shadow duration-300 flex space-x-4 animate-fade-in-up">
-            {isNew && <span className="absolute top-2 right-2 bg-accent text-white text-xs font-bold px-2 py-0.5 rounded-full animate-pulse">NEW</span>}
-            <img src={post.authorPhotoUrl} alt={post.authorName} className="h-12 w-12 rounded-full object-cover flex-shrink-0" />
-            <div className="flex-grow">
-                <div className="flex justify-between items-start">
-                    <div>
-                        <div className="flex items-baseline space-x-2">
-                            <p className="font-bold text-neutral">{post.authorName}</p>
-                            <p className="text-sm text-gray-500">· {new Date(post.timestamp).toLocaleString()}</p>
-                        </div>
-                    </div>
-                     {currentUserRole === 'admin' && (
-                        <div className="flex items-center space-x-1 flex-shrink-0">
-                            <button onClick={onEdit} className="text-gray-500 hover:text-primary p-1 rounded-full hover:bg-gray-100" aria-label="Edit Post">
-                                <PencilIcon className="h-5 w-5"/>
-                            </button>
-                            <button onClick={onDelete} className="text-gray-500 hover:text-red-600 p-1 rounded-full hover:bg-gray-100" aria-label="Delete Post">
-                                <TrashIcon className="h-5 w-5"/>
-                            </button>
-                        </div>
-                    )}
-                </div>
-                <p className="mt-2 text-gray-800 whitespace-pre-wrap">{post.content}</p>
+    const handleCommentSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!commentText.trim()) return;
+        setIsSubmittingComment(true);
+        await onAddComment(post.id, commentText);
+        setCommentText('');
+        setIsSubmittingComment(false);
+    };
 
-                <div className="mt-4 flex items-center space-x-1 rounded-full bg-gray-100/80 p-1 w-fit">
-                    {/* Like Button */}
-                    <button
-                        onClick={() => onReaction(post.id, 'like')}
-                        className={`flex items-center space-x-1.5 rounded-full px-3 py-1.5 text-sm transition-all duration-200 ease-in-out hover:bg-blue-100/60 focus:outline-none focus:ring-2 focus:ring-blue-300 ${
-                            currentUserReaction === 'like' ? 'bg-blue-100 text-blue-700 font-semibold' : 'text-gray-600 hover:text-blue-700'
-                        }`}
-                        aria-pressed={currentUserReaction === 'like'}
-                    >
+    return (
+        <div className="bg-white/80 backdrop-blur-sm p-5 rounded-xl shadow-interactive hover:shadow-interactive-lg hover:-translate-y-1 transition-transform-shadow duration-300 flex flex-col space-y-4 animate-fade-in-up">
+            <div className="relative flex space-x-4">
+                {isNew && <span className="absolute top-0 right-0 bg-accent text-white text-xs font-bold px-2 py-0.5 rounded-full animate-pulse">NEW</span>}
+                <img src={post.authorPhotoUrl} alt={post.authorName} className="h-12 w-12 rounded-full object-cover flex-shrink-0" />
+                <div className="flex-grow">
+                    <div className="flex justify-between items-start">
+                        <div>
+                            <div className="flex items-baseline space-x-2">
+                                <p className="font-bold text-neutral">{post.authorName}</p>
+                                <p className="text-sm text-gray-500">· {new Date(post.timestamp).toLocaleString()}</p>
+                            </div>
+                        </div>
+                         {currentUserRole === 'admin' && (
+                            <div className="flex items-center space-x-1 flex-shrink-0">
+                                <button onClick={onEdit} className="text-gray-500 hover:text-primary p-1 rounded-full hover:bg-gray-100" aria-label="Edit Post">
+                                    <PencilIcon className="h-5 w-5"/>
+                                </button>
+                                <button onClick={onDelete} className="text-gray-500 hover:text-red-600 p-1 rounded-full hover:bg-gray-100" aria-label="Delete Post">
+                                    <TrashIcon className="h-5 w-5"/>
+                                </button>
+                            </div>
+                        )}
+                    </div>
+                    <p className="mt-2 text-gray-800 whitespace-pre-wrap">{post.content}</p>
+                </div>
+            </div>
+            
+            <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-1 rounded-full bg-gray-100/80 p-1 w-fit">
+                    {/* Reaction Buttons */}
+                    <button onClick={() => onReaction(post.id, 'like')} className={`flex items-center space-x-1.5 rounded-full px-3 py-1.5 text-sm transition-all duration-200 ease-in-out hover:bg-blue-100/60 focus:outline-none focus:ring-2 focus:ring-blue-300 ${currentUserReaction === 'like' ? 'bg-blue-100 text-blue-700 font-semibold' : 'text-gray-600 hover:text-blue-700'}`} aria-pressed={currentUserReaction === 'like'}>
                         {currentUserReaction === 'like' ? <HandThumbUpIconSolid className="h-5 w-5" /> : <HandThumbUpIcon className="h-5 w-5" />}
                         <span>{reactionCounts.like}</span>
                     </button>
-
-                    {/* Love Button */}
-                    <button
-                        onClick={() => onReaction(post.id, 'love')}
-                        className={`flex items-center space-x-1.5 rounded-full px-3 py-1.5 text-sm transition-all duration-200 ease-in-out hover:bg-red-100/60 focus:outline-none focus:ring-2 focus:ring-red-300 ${
-                            currentUserReaction === 'love' ? 'bg-red-100 text-red-600 font-semibold' : 'text-gray-600 hover:text-red-600'
-                        }`}
-                        aria-pressed={currentUserReaction === 'love'}
-                    >
+                    <button onClick={() => onReaction(post.id, 'love')} className={`flex items-center space-x-1.5 rounded-full px-3 py-1.5 text-sm transition-all duration-200 ease-in-out hover:bg-red-100/60 focus:outline-none focus:ring-2 focus:ring-red-300 ${currentUserReaction === 'love' ? 'bg-red-100 text-red-600 font-semibold' : 'text-gray-600 hover:text-red-600'}`} aria-pressed={currentUserReaction === 'love'}>
                         {currentUserReaction === 'love' ? <HeartIconSolid className="h-5 w-5" /> : <HeartIcon className="h-5 w-5" />}
                         <span>{reactionCounts.love}</span>
                     </button>
-
-                    {/* Dislike Button */}
-                    <button
-                        onClick={() => onReaction(post.id, 'dislike')}
-                        className={`flex items-center space-x-1.5 rounded-full px-3 py-1.5 text-sm transition-all duration-200 ease-in-out hover:bg-slate-200/60 focus:outline-none focus:ring-2 focus:ring-slate-400 ${
-                             currentUserReaction === 'dislike' ? 'bg-slate-200 text-slate-800 font-semibold' : 'text-gray-600 hover:text-slate-800'
-                        }`}
-                        aria-pressed={currentUserReaction === 'dislike'}
-                    >
+                    <button onClick={() => onReaction(post.id, 'dislike')} className={`flex items-center space-x-1.5 rounded-full px-3 py-1.5 text-sm transition-all duration-200 ease-in-out hover:bg-slate-200/60 focus:outline-none focus:ring-2 focus:ring-slate-400 ${currentUserReaction === 'dislike' ? 'bg-slate-200 text-slate-800 font-semibold' : 'text-gray-600 hover:text-slate-800'}`} aria-pressed={currentUserReaction === 'dislike'}>
                         {currentUserReaction === 'dislike' ? <HandThumbDownIconSolid className="h-5 w-5" /> : <HandThumbDownIcon className="h-5 w-5" />}
                         <span>{reactionCounts.dislike}</span>
                     </button>
                 </div>
+                {post.comments.length > 0 && (
+                    <button onClick={() => setShowComments(!showComments)} className="text-sm text-gray-600 hover:underline">
+                        {showComments ? 'Hide' : 'View'} {post.comments.length} {post.comments.length === 1 ? 'comment' : 'comments'}
+                    </button>
+                )}
             </div>
+
+            {/* Comments Section */}
+            {(showComments || post.comments.length === 0) && (
+                <div className="pt-4 border-t border-gray-200/80 space-y-4">
+                    {post.comments.map(comment => (
+                        <div key={comment.id} className="flex space-x-3">
+                            <img src={comment.authorPhotoUrl} alt={comment.authorName} className="h-9 w-9 rounded-full object-cover flex-shrink-0" />
+                            <div className="flex-grow bg-gray-100/80 rounded-lg p-3">
+                                <div className="flex items-baseline space-x-2">
+                                    <p className="font-semibold text-sm text-neutral">{comment.authorName}</p>
+                                    <p className="text-xs text-gray-500">· {new Date(comment.timestamp).toLocaleString()}</p>
+                                </div>
+                                <p className="text-sm text-gray-800">{comment.content}</p>
+                            </div>
+                        </div>
+                    ))}
+                    {/* Add Comment Form */}
+                    <form onSubmit={handleCommentSubmit} className="flex space-x-3 items-start pt-2">
+                        <img src={currentUserPhoto} alt="Your avatar" className="h-9 w-9 rounded-full object-cover flex-shrink-0" />
+                        <div className="flex-grow">
+                            <textarea
+                                value={commentText}
+                                onChange={(e) => setCommentText(e.target.value)}
+                                placeholder="Write a comment..."
+                                className="w-full p-2 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-primary focus:border-transparent transition bg-white/50"
+                                rows={1}
+                                disabled={isSubmittingComment}
+                            />
+                            {commentText && (
+                                <div className="text-right mt-2">
+                                    <button type="submit" disabled={isSubmittingComment} className="text-sm bg-primary hover:bg-primary-focus text-white font-bold py-1 px-4 rounded-md transition-colors disabled:bg-gray-400">
+                                        {isSubmittingComment ? 'Posting...' : 'Post'}
+                                    </button>
+                                </div>
+                            )}
+                        </div>
+                    </form>
+                </div>
+            )}
         </div>
     );
 };
 
 
-const BlogPage: React.FC<BlogPageProps> = ({ posts, onAddPost, onUpdatePost, onDeletePost, onPostReaction, currentUserId, currentUserRole, currentUserName, currentUserPhoto }) => {
+const BlogPage: React.FC<BlogPageProps> = ({ posts, onAddPost, onUpdatePost, onDeletePost, onPostReaction, onAddComment, currentUserId, currentUserRole, currentUserName, currentUserPhoto }) => {
     const [content, setContent] = useState('');
     const [isPosting, setIsPosting] = useState(false);
     const [editingPost, setEditingPost] = useState<BlogPost | null>(null);
@@ -182,12 +223,14 @@ const BlogPage: React.FC<BlogPageProps> = ({ posts, onAddPost, onUpdatePost, onD
                                 post={post} 
                                 currentUserRole={currentUserRole}
                                 currentUserId={currentUserId}
+                                currentUserPhoto={currentUserPhoto}
                                 onEdit={() => {
                                     setEditingPost(post);
                                     setEditedContent(post.content);
                                 }}
                                 onDelete={() => setDeletingPost(post)}
                                 onReaction={onPostReaction}
+                                onAddComment={onAddComment}
                                 isNew={isNew}
                             />
                         })
