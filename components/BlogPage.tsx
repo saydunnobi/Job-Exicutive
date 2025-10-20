@@ -1,13 +1,15 @@
-import React, { useState } from 'react';
-import { BlogPost } from '../types';
+import React, { useState, useMemo } from 'react';
+import { BlogPost, ReactionType } from '../types';
 import Modal from './Modal';
-import { PencilIcon, TrashIcon } from './icons';
+import { PencilIcon, TrashIcon, HandThumbUpIcon, HeartIcon, HandThumbDownIcon, HandThumbUpIconSolid, HeartIconSolid, HandThumbDownIconSolid } from './icons';
 
 interface BlogPageProps {
   posts: BlogPost[];
   onAddPost: (content: string) => Promise<void>;
   onUpdatePost: (postId: number, content: string) => Promise<void>;
   onDeletePost: (postId: number) => Promise<void>;
+  onPostReaction: (postId: number, reactionType: ReactionType) => void;
+  currentUserId: number;
   currentUserRole: 'seeker' | 'company' | 'admin';
   currentUserName: string;
   currentUserPhoto: string;
@@ -15,13 +17,27 @@ interface BlogPageProps {
 
 interface PostCardProps {
     post: BlogPost;
+    currentUserId: number;
     currentUserRole: 'seeker' | 'company' | 'admin';
     onEdit: () => void;
     onDelete: () => void;
+    onReaction: (postId: number, reactionType: ReactionType) => void;
     isNew?: boolean;
 }
 
-const PostCard: React.FC<PostCardProps> = ({ post, currentUserRole, onEdit, onDelete, isNew }) => {
+const PostCard: React.FC<PostCardProps> = ({ post, currentUserId, currentUserRole, onEdit, onDelete, onReaction, isNew }) => {
+    
+    const reactionCounts = useMemo(() => ({
+        like: post.reactions.filter(r => r.type === 'like').length,
+        love: post.reactions.filter(r => r.type === 'love').length,
+        dislike: post.reactions.filter(r => r.type === 'dislike').length,
+    }), [post.reactions]);
+
+    const currentUserReaction = useMemo(() => 
+        post.reactions.find(r => r.userId === currentUserId)?.type,
+        [post.reactions, currentUserId]
+    );
+
     return (
         <div className="relative bg-white/80 backdrop-blur-sm p-5 rounded-xl shadow-interactive hover:shadow-interactive-lg hover:-translate-y-1 transition-transform-shadow duration-300 flex space-x-4 animate-fade-in-up">
             {isNew && <span className="absolute top-2 right-2 bg-accent text-white text-xs font-bold px-2 py-0.5 rounded-full animate-pulse">NEW</span>}
@@ -46,13 +62,51 @@ const PostCard: React.FC<PostCardProps> = ({ post, currentUserRole, onEdit, onDe
                     )}
                 </div>
                 <p className="mt-2 text-gray-800 whitespace-pre-wrap">{post.content}</p>
+
+                <div className="mt-4 flex items-center space-x-1 rounded-full bg-gray-100/80 p-1 w-fit">
+                    {/* Like Button */}
+                    <button
+                        onClick={() => onReaction(post.id, 'like')}
+                        className={`flex items-center space-x-1.5 rounded-full px-3 py-1.5 text-sm transition-all duration-200 ease-in-out hover:bg-blue-100/60 focus:outline-none focus:ring-2 focus:ring-blue-300 ${
+                            currentUserReaction === 'like' ? 'bg-blue-100 text-blue-700 font-semibold' : 'text-gray-600 hover:text-blue-700'
+                        }`}
+                        aria-pressed={currentUserReaction === 'like'}
+                    >
+                        {currentUserReaction === 'like' ? <HandThumbUpIconSolid className="h-5 w-5" /> : <HandThumbUpIcon className="h-5 w-5" />}
+                        <span>{reactionCounts.like}</span>
+                    </button>
+
+                    {/* Love Button */}
+                    <button
+                        onClick={() => onReaction(post.id, 'love')}
+                        className={`flex items-center space-x-1.5 rounded-full px-3 py-1.5 text-sm transition-all duration-200 ease-in-out hover:bg-red-100/60 focus:outline-none focus:ring-2 focus:ring-red-300 ${
+                            currentUserReaction === 'love' ? 'bg-red-100 text-red-600 font-semibold' : 'text-gray-600 hover:text-red-600'
+                        }`}
+                        aria-pressed={currentUserReaction === 'love'}
+                    >
+                        {currentUserReaction === 'love' ? <HeartIconSolid className="h-5 w-5" /> : <HeartIcon className="h-5 w-5" />}
+                        <span>{reactionCounts.love}</span>
+                    </button>
+
+                    {/* Dislike Button */}
+                    <button
+                        onClick={() => onReaction(post.id, 'dislike')}
+                        className={`flex items-center space-x-1.5 rounded-full px-3 py-1.5 text-sm transition-all duration-200 ease-in-out hover:bg-slate-200/60 focus:outline-none focus:ring-2 focus:ring-slate-400 ${
+                             currentUserReaction === 'dislike' ? 'bg-slate-200 text-slate-800 font-semibold' : 'text-gray-600 hover:text-slate-800'
+                        }`}
+                        aria-pressed={currentUserReaction === 'dislike'}
+                    >
+                        {currentUserReaction === 'dislike' ? <HandThumbDownIconSolid className="h-5 w-5" /> : <HandThumbDownIcon className="h-5 w-5" />}
+                        <span>{reactionCounts.dislike}</span>
+                    </button>
+                </div>
             </div>
         </div>
     );
 };
 
 
-const BlogPage: React.FC<BlogPageProps> = ({ posts, onAddPost, onUpdatePost, onDeletePost, currentUserRole, currentUserName, currentUserPhoto }) => {
+const BlogPage: React.FC<BlogPageProps> = ({ posts, onAddPost, onUpdatePost, onDeletePost, onPostReaction, currentUserId, currentUserRole, currentUserName, currentUserPhoto }) => {
     const [content, setContent] = useState('');
     const [isPosting, setIsPosting] = useState(false);
     const [editingPost, setEditingPost] = useState<BlogPost | null>(null);
@@ -127,11 +181,13 @@ const BlogPage: React.FC<BlogPageProps> = ({ posts, onAddPost, onUpdatePost, onD
                                 key={post.id} 
                                 post={post} 
                                 currentUserRole={currentUserRole}
+                                currentUserId={currentUserId}
                                 onEdit={() => {
                                     setEditingPost(post);
                                     setEditedContent(post.content);
                                 }}
                                 onDelete={() => setDeletingPost(post)}
+                                onReaction={onPostReaction}
                                 isNew={isNew}
                             />
                         })

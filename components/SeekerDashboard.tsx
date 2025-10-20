@@ -1,12 +1,12 @@
-import React, { useState } from 'react';
-import { Job, Company, JobSeeker, Review } from '../types';
+import React, { useState, useMemo } from 'react';
+import { Job, Company, JobSeeker, Review, JobType } from '../types';
 import JobCard from './JobCard';
 import Modal from './Modal';
 import JobDetails from './JobDetails';
 import ResumeBooster from './ResumeBooster';
 import LeaveReviewForm from './LeaveReviewForm';
 import JobSeekerProfileEdit from './JobSeekerProfileEdit';
-import { PencilIcon } from './icons';
+import { PencilIcon, MagnifyingGlassIcon } from './icons';
 
 interface SeekerDashboardProps {
   seeker: JobSeeker;
@@ -22,6 +22,12 @@ const SeekerDashboard: React.FC<SeekerDashboardProps> = ({ seeker, jobs, compani
   const [isReviewModalOpen, setIsReviewModalOpen] = useState(false);
   const [reviewingCompany, setReviewingCompany] = useState<Company | null>(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+
+  // Search and Filter State
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedJobType, setSelectedJobType] = useState('');
+  const [selectedExperience, setSelectedExperience] = useState('');
+  const [minSalary, setMinSalary] = useState(0);
 
   const handleViewDetails = (jobId: number) => {
     setSelectedJobId(jobId);
@@ -58,6 +64,35 @@ const SeekerDashboard: React.FC<SeekerDashboardProps> = ({ seeker, jobs, compani
     onSaveProfile(updatedSeeker);
     setIsEditModalOpen(false);
   };
+  
+  const experienceLevels = useMemo(() => [...new Set(jobs.map(j => j.experienceLevel))], [jobs]);
+
+  const filteredJobs = useMemo(() => {
+    return jobs.filter(job => {
+      const company = companies.find(c => c.id === job.companyId);
+      if (!company) return false;
+
+      const matchesQuery = searchQuery.toLowerCase() === '' ||
+        job.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        company.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        job.location.toLowerCase().includes(searchQuery.toLowerCase());
+
+      const matchesJobType = selectedJobType === '' || job.jobType === selectedJobType;
+      
+      const matchesExperience = selectedExperience === '' || job.experienceLevel === selectedExperience;
+
+      const matchesSalary = job.salaryMin >= minSalary;
+
+      return matchesQuery && matchesJobType && matchesExperience && matchesSalary;
+    });
+  }, [jobs, companies, searchQuery, selectedJobType, selectedExperience, minSalary]);
+
+  const handleResetFilters = () => {
+    setSearchQuery('');
+    setSelectedJobType('');
+    setSelectedExperience('');
+    setMinSalary(0);
+  }
 
   const selectedJob = jobs.find(j => j.id === selectedJobId);
   const selectedJobCompany = selectedJob ? companies.find(c => c.id === selectedJob.companyId) : null;
@@ -66,23 +101,65 @@ const SeekerDashboard: React.FC<SeekerDashboardProps> = ({ seeker, jobs, compani
     <main className="container mx-auto p-4 md:p-8">
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <div className="lg:col-span-2">
-          <h2 className="text-3xl font-bold text-neutral mb-6">Open Positions</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {jobs.map(job => {
-              const company = companies.find(c => c.id === job.companyId);
-              if (!company) return null;
-              return (
-                <JobCard 
-                  key={job.id}
-                  job={job}
-                  company={company}
-                  onApply={handleApply}
-                  onViewDetails={handleViewDetails}
-                  isApplied={appliedJobs.includes(job.id)}
-                />
-              );
-            })}
+          <div className="bg-white/80 backdrop-blur-sm p-4 rounded-xl shadow-interactive mb-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 items-end">
+                <div className="md:col-span-2 lg:col-span-4">
+                    <label htmlFor="search" className="block text-sm font-medium text-gray-700">Search by Title, Company, Location</label>
+                    <div className="relative mt-1">
+                        <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
+                            <MagnifyingGlassIcon className="h-5 w-5 text-gray-400" />
+                        </div>
+                        <input type="text" id="search" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder="e.g., 'React Developer' or 'Innovate Inc.'" className="block w-full rounded-md border-gray-300 pl-10 shadow-sm focus:border-primary focus:ring-primary sm:text-sm" />
+                    </div>
+                </div>
+                <div>
+                    <label htmlFor="jobType" className="block text-sm font-medium text-gray-700">Job Type</label>
+                    <select id="jobType" value={selectedJobType} onChange={(e) => setSelectedJobType(e.target.value)} className="mt-1 block w-full rounded-md border-gray-300 py-2 pl-3 pr-10 text-base focus:border-primary focus:outline-none focus:ring-primary sm:text-sm">
+                        <option value="">All</option>
+                        {Object.values(JobType).map(type => <option key={type} value={type}>{type}</option>)}
+                    </select>
+                </div>
+                <div>
+                    <label htmlFor="experience" className="block text-sm font-medium text-gray-700">Experience</label>
+                    <select id="experience" value={selectedExperience} onChange={(e) => setSelectedExperience(e.target.value)} className="mt-1 block w-full rounded-md border-gray-300 py-2 pl-3 pr-10 text-base focus:border-primary focus:outline-none focus:ring-primary sm:text-sm">
+                        <option value="">All</option>
+                        {experienceLevels.map(level => <option key={level} value={level}>{level}</option>)}
+                    </select>
+                </div>
+                <div>
+                    <label htmlFor="salary" className="block text-sm font-medium text-gray-700">Min Salary: ${minSalary.toLocaleString()}</label>
+                    <input type="range" id="salary" min="0" max="200000" step="10000" value={minSalary} onChange={(e) => setMinSalary(Number(e.target.value))} className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer mt-2" />
+                </div>
+                <div>
+                    <button onClick={handleResetFilters} className="w-full rounded-md bg-gray-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-gray-500">Reset</button>
+                </div>
+            </div>
           </div>
+
+          <h2 className="text-3xl font-bold text-neutral mb-6">Open Positions ({filteredJobs.length})</h2>
+          {filteredJobs.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {filteredJobs.map(job => {
+                  const company = companies.find(c => c.id === job.companyId);
+                  if (!company) return null;
+                  return (
+                    <JobCard 
+                      key={job.id}
+                      job={job}
+                      company={company}
+                      onApply={handleApply}
+                      onViewDetails={handleViewDetails}
+                      isApplied={appliedJobs.includes(job.id)}
+                    />
+                  );
+                })}
+            </div>
+          ) : (
+            <div className="text-center py-12 bg-white/80 backdrop-blur-sm rounded-xl">
+                <p className="text-lg font-semibold text-neutral">No Jobs Found</p>
+                <p className="text-gray-500 mt-2">Try adjusting your search filters.</p>
+            </div>
+          )}
         </div>
         
         <div className="lg:col-span-1 space-y-8">

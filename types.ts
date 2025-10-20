@@ -1,3 +1,4 @@
+// FIX: Removed self-import of JobType and LocationType which was causing declaration conflicts.
 export enum JobType {
   FullTime = 'Full-Time',
   PartTime = 'Part-Time',
@@ -68,6 +69,13 @@ export interface Admin {
   password?: string; // Added for auth
 }
 
+export type ReactionType = 'like' | 'love' | 'dislike';
+
+export interface Reaction {
+  userId: number;
+  type: ReactionType;
+}
+
 export interface BlogPost {
   id: number;
   authorId: number;
@@ -76,4 +84,5 @@ export interface BlogPost {
   authorPhotoUrl: string;
   content: string;
   timestamp: string;
+  reactions: Reaction[];
 }

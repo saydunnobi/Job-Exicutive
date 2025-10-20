@@ -3,7 +3,7 @@ import LoginPage from './components/LoginPage';
 import SeekerDashboard from './components/SeekerDashboard';
 import CompanyDashboard from './components/CompanyDashboard';
 import AdminDashboard from './components/AdminDashboard';
-import { JobSeeker, Company, Admin, Job, Review, BlogPost } from './types';
+import { JobSeeker, Company, Admin, Job, Review, BlogPost, ReactionType } from './types';
 import { api } from './services/apiService';
 import BlogPage from './components/BlogPage';
 import { BriefcaseIcon, NewspaperIcon } from './components/icons';
@@ -131,7 +131,7 @@ const App: React.FC = () => {
           if (company) {
               const content = `New review for ${company.name}!\n\nI gave them a ${'★'.repeat(review.rating)}${'☆'.repeat(5 - review.rating)} rating.\n\nMy thoughts: "${review.comment}"`;
               
-              const newPostData: Omit<BlogPost, 'id' | 'timestamp'> = {
+              const newPostData: Omit<BlogPost, 'id' | 'timestamp' | 'reactions'> = {
                   authorId: seeker.id,
                   authorName: seeker.name,
                   authorRole: 'seeker',
@@ -205,7 +205,7 @@ const App: React.FC = () => {
             authorPhotoUrl = (currentUser as Company).logo;
         }
 
-        const newPostData: Omit<BlogPost, 'id' | 'timestamp'> = {
+        const newPostData: Omit<BlogPost, 'id' | 'timestamp' | 'reactions'> = {
             authorId: currentUser.id,
             authorName,
             authorRole: currentUserRole,
@@ -227,6 +227,13 @@ const App: React.FC = () => {
             setBlogPosts(posts => posts.filter(p => p.id !== postId));
         }
     };
+    
+    const handlePostReaction = async (postId: number, reactionType: ReactionType) => {
+        if (!currentUser) return;
+        const updatedPost = await api.addOrUpdateReaction(postId, currentUser.id, reactionType);
+        setBlogPosts(posts => posts.map(p => p.id === postId ? updatedPost : p));
+    };
+
 
     if (isLoading) {
         return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
@@ -314,6 +321,8 @@ const App: React.FC = () => {
                     onAddPost={handleAddBlogPost}
                     onUpdatePost={handleUpdateBlogPost}
                     onDeletePost={handleDeleteBlogPost}
+                    onPostReaction={handlePostReaction}
+                    currentUserId={currentUser.id}
                     currentUserRole={currentUserRole}
                     currentUserName={currentUserName}
                     currentUserPhoto={currentUserPhoto}

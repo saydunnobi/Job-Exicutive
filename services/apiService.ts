@@ -4,7 +4,7 @@
  * This file simulates a backend server and database. In a real-world application,
  * these functions would make network requests (e.g., using fetch) to a REST or GraphQL API.
  */
-import { Job, Company, JobSeeker, Admin, Review, JobType, LocationType, BlogPost } from '../types';
+import { Job, Company, JobSeeker, Admin, Review, JobType, LocationType, BlogPost, ReactionType, Reaction } from '../types';
 
 // --- SIMULATED DATABASE ---
 let seekers: JobSeeker[] = [
@@ -34,6 +34,7 @@ let blogPosts: BlogPost[] = [
         authorPhotoUrl: 'https://i.pravatar.cc/150?u=innovate',
         content: 'We are excited to announce we are hiring for several new roles! Check out our open positions for Frontend and Backend developers.',
         timestamp: new Date(Date.now() - 1000 * 60 * 60 * 24).toISOString(), // 1 day ago
+        reactions: [],
     },
     {
         id: 2,
@@ -43,6 +44,7 @@ let blogPosts: BlogPost[] = [
         authorPhotoUrl: 'https://i.pravatar.cc/150?u=alex',
         content: 'Just had a great interview experience! My tip for fellow developers: always be prepared to talk about a project you are passionate about. It really shows your skills and enthusiasm.',
         timestamp: new Date(Date.now() - 1000 * 60 * 30).toISOString(), // 30 mins ago
+        reactions: [],
     }
 ];
 const admins: Admin[] = [
@@ -187,12 +189,13 @@ export const api = {
     }
   },
   
-  addBlogPost: async(postData: Omit<BlogPost, 'id' | 'timestamp'>): Promise<BlogPost> => {
+  addBlogPost: async(postData: Omit<BlogPost, 'id' | 'timestamp' | 'reactions'>): Promise<BlogPost> => {
     await delay(200);
     const newPost: BlogPost = {
         ...postData,
         id: Date.now(),
         timestamp: new Date().toISOString(),
+        reactions: [],
     };
     blogPosts = [newPost, ...blogPosts];
     return newPost;
@@ -209,6 +212,38 @@ export const api = {
         return p;
     });
     if (!updatedPost) throw new Error("Post not found");
+    return updatedPost;
+  },
+  
+  addOrUpdateReaction: async(postId: number, userId: number, type: ReactionType): Promise<BlogPost> => {
+    await delay(100);
+    const postIndex = blogPosts.findIndex(p => p.id === postId);
+    if (postIndex === -1) throw new Error("Post not found");
+
+    const originalPost = blogPosts[postIndex];
+    const existingReactionIndex = originalPost.reactions.findIndex(r => r.userId === userId);
+    
+    let newReactions: Reaction[];
+
+    if (existingReactionIndex > -1) {
+      // User has reacted before
+      const existingReaction = originalPost.reactions[existingReactionIndex];
+      if (existingReaction.type === type) {
+        // Same reaction clicked, so remove it (toggle off)
+        newReactions = originalPost.reactions.filter((_, index) => index !== existingReactionIndex);
+      } else {
+        // Different reaction clicked, so update it
+        newReactions = originalPost.reactions.map((reaction, index) => 
+            index === existingReactionIndex ? { ...reaction, type: type } : reaction
+        );
+      }
+    } else {
+      // New reaction
+      newReactions = [...originalPost.reactions, { userId, type }];
+    }
+    
+    const updatedPost = { ...originalPost, reactions: newReactions };
+    blogPosts[postIndex] = updatedPost;
     return updatedPost;
   },
 
