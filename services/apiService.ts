@@ -8,27 +8,27 @@ import { Job, Company, JobSeeker, Admin, Review, JobType, LocationType, BlogPost
 
 // --- SIMULATED DATABASE ---
 let seekers: JobSeeker[] = [
-    { id: 1, name: 'Alex Doe', email: 'alex.doe@example.com', password: 'password123', phone: '123-456-7890', photoUrl: 'https://i.pravatar.cc/150?u=alex', skills: ['React', 'TypeScript', 'Node.js'], resumeUrl: '#', expectedSalary: 90000, appliedJobs: [1] },
-    { id: 2, name: 'Brenda Smith', email: 'brenda.smith@example.com', password: 'password123', phone: '234-567-8901', photoUrl: 'https://i.pravatar.cc/150?u=brenda', skills: ['Vue', 'JavaScript', 'CSS'], resumeUrl: '#', expectedSalary: 80000, appliedJobs: [] },
+    { id: 101, name: 'Alex Doe', email: 'alex.doe@example.com', password: 'password123', phone: '123-456-7890', photoUrl: 'https://i.pravatar.cc/150?u=alex', skills: ['React', 'TypeScript', 'Node.js'], resumeUrl: '#', expectedSalary: 90000, appliedJobs: [1] },
+    { id: 102, name: 'Brenda Smith', email: 'brenda.smith@example.com', password: 'password123', phone: '234-567-8901', photoUrl: 'https://i.pravatar.cc/150?u=brenda', skills: ['Vue', 'JavaScript', 'CSS'], resumeUrl: '#', expectedSalary: 80000, appliedJobs: [] },
 ];
 let companies: Company[] = [
-    { id: 1, name: 'Innovate Inc.', email: 'contact@innovate.com', password: 'password123', logo: 'https://i.pravatar.cc/150?u=innovate', description: 'A leading tech company.', website: 'https://innovate.com', contactInfo: '123- Innovate St.', officeAddress: '123 Tech Park, Silicon Valley, CA', reviews: [
+    { id: 201, name: 'Innovate Inc.', email: 'contact@innovate.com', password: 'password123', logo: 'https://i.pravatar.cc/150?u=innovate', description: 'A leading tech company.', website: 'https://innovate.com', contactInfo: '123- Innovate St.', officeAddress: '123 Tech Park, Silicon Valley, CA', reviews: [
         { id: 1, reviewerName: 'Brenda Smith', rating: 4.5, comment: 'Great place to work!', date: '2023-10-26' },
         { id: 2, reviewerName: 'External Person', rating: 5, comment: 'Excellent culture and benefits.', date: '2023-10-25' }
     ], jobs: [1, 2] },
-    { id: 2, name: 'Creative Solutions', email: 'hr@creative.com', password: 'password123', logo: 'https://i.pravatar.cc/150?u=creative', description: 'We make creative software.', website: 'https://creative.com', contactInfo: '456- Creative Ave.', officeAddress: '456 Design Plaza, San Francisco, CA', reviews: [
+    { id: 202, name: 'Creative Solutions', email: 'hr@creative.com', password: 'password123', logo: 'https://i.pravatar.cc/150?u=creative', description: 'We make creative software.', website: 'https://creative.com', contactInfo: '456- Creative Ave.', officeAddress: '456 Design Plaza, San Francisco, CA', reviews: [
         { id: 3, reviewerName: 'Alex Doe', rating: 3, comment: 'It was okay, long hours.', date: '2023-10-24' }
     ], jobs: [3] },
 ];
 let jobs: Job[] = [
-    { id: 1, companyId: 1, title: 'Frontend Developer', description: 'Job description here...', location: 'New York, NY', experienceLevel: 'Mid-Level', salaryMin: 80000, salaryMax: 100000, jobType: JobType.FullTime, locationType: LocationType.Hybrid, applicants: [1], shortlisted: [], rejected: [] },
-    { id: 2, companyId: 1, title: 'Backend Developer', description: 'Job description here...', location: 'Remote', experienceLevel: 'Senior', salaryMin: 120000, salaryMax: 150000, jobType: JobType.FullTime, locationType: LocationType.Remote, applicants: [], shortlisted: [], rejected: [] },
-    { id: 3, companyId: 2, title: 'UI/UX Designer', description: 'Job description here...', location: 'San Francisco, CA', experienceLevel: 'Junior', salaryMin: 60000, salaryMax: 75000, jobType: JobType.Contract, locationType: LocationType.Onsite, applicants: [], shortlisted: [], rejected: [] },
+    { id: 1, companyId: 201, title: 'Frontend Developer', description: 'Job description here...', location: 'New York, NY', experienceLevel: 'Mid-Level', salaryMin: 80000, salaryMax: 100000, jobType: JobType.FullTime, locationType: LocationType.Hybrid, applicants: [101], shortlisted: [], rejected: [] },
+    { id: 2, companyId: 201, title: 'Backend Developer', description: 'Job description here...', location: 'Remote', experienceLevel: 'Senior', salaryMin: 120000, salaryMax: 150000, jobType: JobType.FullTime, locationType: LocationType.Remote, applicants: [], shortlisted: [], rejected: [] },
+    { id: 3, companyId: 202, title: 'UI/UX Designer', description: 'Job description here...', location: 'San Francisco, CA', experienceLevel: 'Junior', salaryMin: 60000, salaryMax: 75000, jobType: JobType.Contract, locationType: LocationType.Onsite, applicants: [], shortlisted: [], rejected: [] },
 ];
 let blogPosts: BlogPost[] = [
     {
         id: 1,
-        authorId: 1,
+        authorId: 201,
         authorName: 'Innovate Inc.',
         authorRole: 'company',
         authorPhotoUrl: 'https://i.pravatar.cc/150?u=innovate',
@@ -39,7 +39,7 @@ let blogPosts: BlogPost[] = [
     },
     {
         id: 2,
-        authorId: 1,
+        authorId: 101,
         authorName: 'Alex Doe',
         authorRole: 'seeker',
         authorPhotoUrl: 'https://i.pravatar.cc/150?u=alex',
@@ -47,12 +47,12 @@ let blogPosts: BlogPost[] = [
         timestamp: new Date(Date.now() - 1000 * 60 * 30).toISOString(), // 30 mins ago
         reactions: [],
         comments: [
-            { id: 1, authorId: 2, authorName: 'Brenda Smith', authorPhotoUrl: 'https://i.pravatar.cc/150?u=brenda', content: 'That\'s a great tip, Alex! Thanks for sharing.', timestamp: new Date(Date.now() - 1000 * 60 * 15).toISOString() }
+            { id: 1, authorId: 102, authorName: 'Brenda Smith', authorPhotoUrl: 'https://i.pravatar.cc/150?u=brenda', content: 'That\'s a great tip, Alex! Thanks for sharing.', timestamp: new Date(Date.now() - 1000 * 60 * 15).toISOString() }
         ],
     }
 ];
 const admins: Admin[] = [
-    { id: 1, email: 'sidunnobiovi@gmail.com', password: '9Ga19eUz' },
+    { id: 301, email: 'sidunnobiovi@gmail.com', password: '9Ga19eUz' },
 ];
 // --- END SIMULATED DATABASE ---
 
