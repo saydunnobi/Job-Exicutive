@@ -1,6 +1,7 @@
 import React from 'react';
 import { Job, Company, JobType, LocationType } from '../types';
 import { BriefcaseIcon, BuildingOfficeIcon, MapPinIcon, CurrencyDollarIcon, ClockIcon, GlobeAltIcon } from './icons';
+import StarRating from './StarRating';
 
 interface JobCardProps {
   job: Job;
@@ -11,6 +12,10 @@ interface JobCardProps {
 }
 
 const JobCard: React.FC<JobCardProps> = ({ job, company, onApply, onViewDetails, isApplied }) => {
+  const avgRating = company.reviews.length > 0
+    ? company.reviews.reduce((acc, r) => acc + r.rating, 0) / company.reviews.length
+    : 0;
+
   return (
     <div className="bg-white/80 backdrop-blur-sm rounded-xl shadow-interactive hover:shadow-interactive-lg hover:-translate-y-1 transition-transform-shadow duration-300 p-6 flex flex-col">
       <div className="flex items-start mb-4">
@@ -18,6 +23,7 @@ const JobCard: React.FC<JobCardProps> = ({ job, company, onApply, onViewDetails,
         <div>
           <h3 className="text-xl font-bold text-neutral">{job.title}</h3>
           <p className="text-primary font-semibold">{company.name}</p>
+          <StarRating rating={avgRating} totalReviews={company.reviews.length} />
         </div>
       </div>
       
