@@ -6,10 +6,10 @@ import { BriefcaseIcon, CurrencyDollarIcon, MapPinIcon } from './icons';
 interface JobDetailsProps {
   job: Job;
   company: Company;
-  onApply: (jobId: number) => void;
+  onApply: (jobId: string) => void;
   isApplied: boolean;
   userRole: 'seeker' | 'company' | 'admin';
-  onLeaveReview: (companyId: number) => void;
+  onLeaveReview: (companyId: string) => void;
 }
 
 const JobDetails: React.FC<JobDetailsProps> = ({ job, company, onApply, isApplied, userRole, onLeaveReview }) => {

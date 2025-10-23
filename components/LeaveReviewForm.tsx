@@ -4,7 +4,7 @@ import { StarIcon } from './icons';
 
 interface LeaveReviewFormProps {
   companyName: string;
-  onSubmit: (review: Omit<Review, 'id' | 'date'>) => void;
+  onSubmit: (review: Omit<Review, 'id' | 'date' | 'authorId'>) => void;
   onCancel: () => void;
 }
 

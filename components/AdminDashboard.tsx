@@ -10,7 +10,7 @@ interface AdminDashboardProps {
   jobs: Job[];
   companies: Company[];
   seekers: JobSeeker[];
-  onDelete: (type: 'job' | 'company' | 'seeker', id: number) => void;
+  onDelete: (type: 'job' | 'company' | 'seeker' | 'blogPost', id: string) => void;
   onSaveSeeker: (seeker: JobSeeker) => void;
   onSaveCompany: (company: Company) => void;
   onSaveJob: (job: Job | Omit<Job, 'id' | 'applicants' | 'shortlisted' | 'rejected'>) => void;
@@ -27,7 +27,7 @@ const StatCard: React.FC<{ title: string; value: number; icon: React.ReactNode }
 );
 
 const emptySeeker: JobSeeker = { 
-    id: 0, 
+    id: '', 
     name: '', 
     email: '', 
     password: 'password123', 
@@ -45,11 +45,11 @@ const emptySeeker: JobSeeker = {
         minSalary: 0,
     }
 };
-const emptyCompany: Company = { id: 0, name: '', email: '', password: 'password123', logo: '', description: '', website: '', contactInfo: '', officeAddress: '', reviews: [], jobs: [] };
+const emptyCompany: Company = { id: '', name: '', email: '', password: 'password123', logo: '', description: '', website: '', contactInfo: '', officeAddress: '', reviews: [], jobs: [] };
 
 const AdminDashboard: React.FC<AdminDashboardProps> = ({ jobs, companies, seekers, onDelete, onSaveSeeker, onSaveCompany, onSaveJob }) => {
     const [modalState, setModalState] = useState<{ type: 'job' | 'company' | 'seeker' | null, item: any | null, mode: 'add' | 'edit' | null }>({ type: null, item: null, mode: null });
-    const [deleteConfirm, setDeleteConfirm] = useState<{ type: 'job' | 'company' | 'seeker', id: number, name: string } | null>(null);
+    const [deleteConfirm, setDeleteConfirm] = useState<{ type: 'job' | 'company' | 'seeker' | 'blogPost', id: string, name: string } | null>(null);
 
     const openModal = (type: 'job' | 'company' | 'seeker', mode: 'add' | 'edit', item: any = null) => {
         let modalItem = item;
@@ -62,7 +62,6 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ jobs, companies, seeker
     const closeModal = () => setModalState({ type: null, item: null, mode: null });
 
     const openDeleteConfirm = (type: 'job' | 'company' | 'seeker', item: Job | Company | JobSeeker) => {
-        // FIX: The `item` is a union type. Cast it based on the `type` parameter to allow TypeScript to access the correct property (`title` for Job, `name` for others).
         setDeleteConfirm({ type, id: item.id, name: type === 'job' ? (item as Job).title : (item as Company | JobSeeker).name });
     };
     const closeDeleteConfirm = () => setDeleteConfirm(null);

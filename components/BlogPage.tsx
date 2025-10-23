@@ -6,13 +6,13 @@ import { PencilIcon, TrashIcon, HandThumbUpIcon, HeartIcon, HandThumbDownIcon, H
 interface BlogPageProps {
   posts: BlogPost[];
   onAddPost: (content: string) => Promise<void>;
-  onUpdatePost: (postId: number, content: string) => Promise<void>;
-  onDeletePost: (postId: number) => Promise<void>;
-  onPostReaction: (postId: number, reactionType: ReactionType) => void;
-  onAddComment: (postId: number, content: string) => Promise<void>;
-  onUpdateComment: (postId: number, commentId: number, content: string) => Promise<void>;
-  onDeleteComment: (postId: number, commentId: number) => Promise<void>;
-  currentUserId: number;
+  onUpdatePost: (postId: string, content: string) => Promise<void>;
+  onDeletePost: (postId: string) => Promise<void>;
+  onPostReaction: (postId: string, reactionType: ReactionType) => void;
+  onAddComment: (postId: string, content: string) => Promise<void>;
+  onUpdateComment: (postId: string, commentId: string, content: string) => Promise<void>;
+  onDeleteComment: (postId: string, commentId: string) => Promise<void>;
+  currentUserId: string;
   currentUserRole: 'seeker' | 'company' | 'admin';
   currentUserName: string;
   currentUserPhoto: string;
@@ -20,14 +20,14 @@ interface BlogPageProps {
 
 interface PostCardProps {
     post: BlogPost;
-    currentUserId: number;
+    currentUserId: string;
     currentUserRole: 'seeker' | 'company' | 'admin';
     currentUserPhoto: string; // For comment form
     onEdit: () => void;
     onDelete: () => void;
-    onReaction: (postId: number, reactionType: ReactionType) => void;
-    onAddComment: (postId: number, content: string) => Promise<void>;
-    onUpdateComment: (postId: number, commentId: number, content: string) => Promise<void>;
+    onReaction: (postId: string, reactionType: ReactionType) => void;
+    onAddComment: (postId: string, content: string) => Promise<void>;
+    onUpdateComment: (postId: string, commentId: string, content: string) => Promise<void>;
     onDeleteCommentClick: (comment: Comment) => void;
     isNew?: boolean;
 }
@@ -201,7 +201,7 @@ const BlogPage: React.FC<BlogPageProps> = ({ posts, onAddPost, onUpdatePost, onD
     const [editingPost, setEditingPost] = useState<BlogPost | null>(null);
     const [editedContent, setEditedContent] = useState('');
     const [deletingPost, setDeletingPost] = useState<BlogPost | null>(null);
-    const [deletingCommentInfo, setDeletingCommentInfo] = useState<{ postId: number; comment: Comment } | null>(null);
+    const [deletingCommentInfo, setDeletingCommentInfo] = useState<{ postId: string; comment: Comment } | null>(null);
     
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();

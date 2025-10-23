@@ -13,8 +13,8 @@ export enum LocationType {
 }
 
 export interface Job {
-  id: number;
-  companyId: number;
+  id: string;
+  companyId: string;
   title: string;
   description: string;
   location: string;
@@ -23,13 +23,14 @@ export interface Job {
   salaryMax: number;
   jobType: JobType;
   locationType: LocationType;
-  applicants: number[]; // array of seeker ids
-  shortlisted: number[];
-  rejected: number[];
+  applicants: string[]; // array of seeker ids
+  shortlisted: string[];
+  rejected: string[];
 }
 
 export interface Review {
-    id: number;
+    id: string;
+    authorId: string;
     reviewerName: string;
     rating: number; // 1-5
     comment: string;
@@ -37,17 +38,17 @@ export interface Review {
 }
 
 export interface Company {
-  id: number;
+  id: string; // Corresponds to Firebase Auth UID
   name: string;
   email: string;
-  password?: string; // Added for auth
+  password?: string;
   logo: string;
   description: string;
   website: string;
   contactInfo: string;
   officeAddress: string;
   reviews: Review[];
-  jobs: number[]; // array of job ids
+  jobs: string[]; // array of job ids
 }
 
 export interface JobAlertsPreferences {
@@ -58,36 +59,36 @@ export interface JobAlertsPreferences {
 }
 
 export interface JobSeeker {
-  id: number;
+  id: string; // Corresponds to Firebase Auth UID
   name: string;
   email: string;
-  password?: string; // Added for auth
+  password?: string;
   phone: string;
   photoUrl: string;
   skills: string[];
   resumeUrl: string; // url to pdf
   expectedSalary: number;
-  appliedJobs: number[]; // array of job ids
+  appliedJobs: string[]; // array of job ids
   jobAlertsEnabled: boolean;
   jobAlertsPreferences: JobAlertsPreferences;
 }
 
 export interface Admin {
-  id: number;
+  id: string; // Corresponds to Firebase Auth UID
   email: string;
-  password?: string; // Added for auth
+  password?: string;
 }
 
 export type ReactionType = 'like' | 'love' | 'dislike';
 
 export interface Reaction {
-  userId: number;
+  userId: string;
   type: ReactionType;
 }
 
 export interface Comment {
-  id: number;
-  authorId: number;
+  id: string;
+  authorId: string;
   authorName: string;
   authorPhotoUrl: string;
   content: string;
@@ -95,8 +96,8 @@ export interface Comment {
 }
 
 export interface BlogPost {
-  id: number;
-  authorId: number;
+  id: string;
+  authorId: string;
   authorName: string;
   authorRole: 'seeker' | 'company' | 'admin';
   authorPhotoUrl: string;

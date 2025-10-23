@@ -7,6 +7,8 @@ import { JobSeeker, Company, Admin, Job, Review, BlogPost, ReactionType, Comment
 import { api } from './services/apiService';
 import BlogPage from './components/BlogPage';
 import { BriefcaseIcon, NewspaperIcon } from './components/icons';
+// FIX: Removed incorrect Firebase v9 import. The v8-style `auth` object will be used instead.
+import { auth } from './services/firebaseConfig';
 
 type User = JobSeeker | Company | Admin;
 type UserRole = 'seeker' | 'company' | 'admin';
@@ -55,6 +57,7 @@ const App: React.FC = () => {
     // Initial data load
     useEffect(() => {
         const loadData = async () => {
+            setIsLoading(true);
             const [seekersData, companiesData, jobsData, postsData] = await Promise.all([
                 api.getSeekers(),
                 api.getCompanies(),
@@ -64,63 +67,64 @@ const App: React.FC = () => {
             setSeekers(seekersData);
             setCompanies(companiesData);
             setJobs(jobsData);
-            setBlogPosts(postsData.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()));
+            setBlogPosts(postsData);
+            setIsLoading(false);
         };
-        
-        // Persist login session
-        const storedUser = sessionStorage.getItem('currentUser');
-        const storedRole = sessionStorage.getItem('currentUserRole');
-        if (storedUser && storedRole) {
-            setCurrentUser(JSON.parse(storedUser));
-            setCurrentUserRole(storedRole as UserRole);
-        }
-        
-        loadData().finally(() => setIsLoading(false));
+        loadData();
+    }, [currentUser]); // Reload data when user changes
+
+    // Firebase Auth State Listener
+    useEffect(() => {
+        // FIX: Switched from Firebase v9 `onAuthStateChanged(auth, ...)` to v8 `auth.onAuthStateChanged(...)` syntax.
+        const unsubscribe = auth.onAuthStateChanged(async (user) => {
+            if (user) {
+                const userProfile = await api.getUserProfile(user.uid);
+                if (userProfile) {
+                    setCurrentUser(userProfile.user);
+                    setCurrentUserRole(userProfile.role);
+                } else {
+                    // Profile not in DB, force logout
+                    await api.logout();
+                }
+            } else {
+                setCurrentUser(null);
+                setCurrentUserRole(null);
+            }
+            setIsLoading(false);
+        });
+        return () => unsubscribe(); // Cleanup subscription on unmount
     }, []);
 
     const handleLogin = async (email: string, password: string, role: UserRole) => {
         setAuthError(null);
-        const result = await api.authenticateUser(email, password, role);
-
-        if ('user' in result) {
-            setCurrentUser(result.user);
-            setCurrentUserRole(result.role);
-            sessionStorage.setItem('currentUser', JSON.stringify(result.user));
-            sessionStorage.setItem('currentUserRole', result.role);
-            // If a new user was created, we need to refresh our user lists
-            if (role === 'seeker' && !seekers.find(s => s.id === result.user.id)) {
-                setSeekers(prev => [...prev, result.user as JobSeeker]);
-            }
-            if (role === 'company' && !companies.find(c => c.id === result.user.id)) {
-                setCompanies(prev => [...prev, result.user as Company]);
-            }
-        } else {
-            setAuthError(result.error);
+        setIsLoading(true);
+        try {
+            await api.authenticateUser(email, password, role);
+            // onAuthStateChanged will handle setting the current user
+        } catch (error: any) {
+            setAuthError(error.message);
+        } finally {
+            setIsLoading(false);
         }
     };
 
-    const handleLogout = () => {
-        setCurrentUser(null);
-        setCurrentUserRole(null);
-        sessionStorage.removeItem('currentUser');
-        sessionStorage.removeItem('currentUserRole');
+    const handleLogout = async () => {
+        await api.logout();
     };
     
     const handleSaveSeekerProfile = async (updatedSeeker: JobSeeker) => {
       const savedSeeker = await api.saveSeeker(updatedSeeker);
       setSeekers(seekers.map(s => s.id === savedSeeker.id ? savedSeeker : s));
       setCurrentUser(savedSeeker);
-      sessionStorage.setItem('currentUser', JSON.stringify(savedSeeker));
     }
 
     const handleSaveCompanyProfile = async (updatedCompany: Company) => {
       const savedCompany = await api.saveCompany(updatedCompany);
       setCompanies(companies.map(c => c.id === savedCompany.id ? savedCompany : c));
       setCurrentUser(savedCompany);
-      sessionStorage.setItem('currentUser', JSON.stringify(savedCompany));
     }
 
-    const handleAddReview = async (companyId: number, review: Omit<Review, 'id' | 'date'>) => {
+    const handleAddReview = async (companyId: string, review: Omit<Review, 'id' | 'date'>) => {
       const updatedCompany = await api.addReview(companyId, review);
       setCompanies(companies.map(c => c.id === companyId ? updatedCompany : c));
       
@@ -152,7 +156,7 @@ const App: React.FC = () => {
         setJobs(prev => [newJob, ...prev]);
     }
     
-    const handleAdminDelete = async (type: 'job' | 'company' | 'seeker' | 'blogPost', id: number) => {
+    const handleAdminDelete = async (type: 'job' | 'company' | 'seeker' | 'blogPost', id: string) => {
         if (await api.deleteEntity(type, id)) {
             if (type === 'job') setJobs(jobs.filter(j => j.id !== id));
             if (type === 'seeker') setSeekers(seekers.filter(s => s.id !== id));
@@ -161,6 +165,7 @@ const App: React.FC = () => {
                 // Also remove jobs associated with that company
                 setJobs(jobs.filter(j => j.companyId !== id));
             }
+             if (type === 'blogPost') setBlogPosts(blogPosts.filter(p => p.id !== id));
         }
     }
 
@@ -217,24 +222,24 @@ const App: React.FC = () => {
         setBlogPosts(prev => [savedPost, ...prev]);
     };
 
-    const handleUpdateBlogPost = async (postId: number, content: string) => {
+    const handleUpdateBlogPost = async (postId: string, content: string) => {
         const updatedPost = await api.updateBlogPost(postId, content);
         setBlogPosts(posts => posts.map(p => p.id === postId ? updatedPost : p));
     };
 
-    const handleDeleteBlogPost = async (postId: number) => {
+    const handleDeleteBlogPost = async (postId: string) => {
         if (await api.deleteEntity('blogPost', postId)) {
             setBlogPosts(posts => posts.filter(p => p.id !== postId));
         }
     };
     
-    const handlePostReaction = async (postId: number, reactionType: ReactionType) => {
+    const handlePostReaction = async (postId: string, reactionType: ReactionType) => {
         if (!currentUser) return;
         const updatedPost = await api.addOrUpdateReaction(postId, currentUser.id, reactionType);
         setBlogPosts(posts => posts.map(p => p.id === postId ? updatedPost : p));
     };
 
-    const handleAddComment = async (postId: number, content: string) => {
+    const handleAddComment = async (postId: string, content: string) => {
         if (!currentUser || !currentUserRole) return;
         
         const authorId = currentUser.id;
@@ -263,19 +268,19 @@ const App: React.FC = () => {
         setBlogPosts(posts => posts.map(p => p.id === postId ? updatedPost : p));
     };
 
-    const handleUpdateComment = async (postId: number, commentId: number, content: string) => {
+    const handleUpdateComment = async (postId: string, commentId: string, content: string) => {
         const updatedPost = await api.updateComment(postId, commentId, content);
         setBlogPosts(posts => posts.map(p => p.id === postId ? updatedPost : p));
     };
 
-    const handleDeleteComment = async (postId: number, commentId: number) => {
+    const handleDeleteComment = async (postId: string, commentId: string) => {
         const updatedPost = await api.deleteComment(postId, commentId);
         setBlogPosts(posts => posts.map(p => p.id === postId ? updatedPost : p));
     };
 
 
     if (isLoading) {
-        return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
+        return <div className="min-h-screen flex items-center justify-center text-xl font-semibold text-primary">Loading Job Executive...</div>;
     }
 
     if (!currentUser || !currentUserRole) {

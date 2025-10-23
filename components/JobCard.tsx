@@ -6,8 +6,8 @@ import StarRating from './StarRating';
 interface JobCardProps {
   job: Job;
   company: Company;
-  onApply: (jobId: number) => void;
-  onViewDetails: (jobId: number) => void;
+  onApply: (jobId: string) => void;
+  onViewDetails: (jobId: string) => void;
   isApplied: boolean;
 }
 

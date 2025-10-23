@@ -4,7 +4,7 @@ import { Job, Company, JobType, LocationType } from '../types';
 interface PostJobFormProps {
   onSave: (job: Job | Omit<Job, 'id' | 'applicants' | 'shortlisted' | 'rejected'>) => void;
   onCancel: () => void;
-  companyId?: number; // Provided by CompanyDashboard
+  companyId?: string; // Provided by CompanyDashboard
   companies?: Company[]; // Provided by AdminDashboard
   jobToEdit?: Job | null; // Provided for editing
 }
@@ -20,7 +20,7 @@ const PostJobForm: React.FC<PostJobFormProps> = ({ companyId, companies, jobToEd
     salaryMax: 70000,
     jobType: JobType.FullTime,
     locationType: LocationType.Onsite,
-    companyId: companyId || (companies && companies.length > 0 ? companies[0].id : 0),
+    companyId: companyId || (companies && companies.length > 0 ? companies[0].id : ''),
   });
 
   useEffect(() => {

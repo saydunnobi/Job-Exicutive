@@ -1,362 +1,321 @@
-// services/apiService.ts
 /**
- * Mock API Service
- * This file simulates a backend server and database. In a real-world application,
- * these functions would make network requests (e.g., using fetch) to a REST or GraphQL API.
+ * Firebase API Service
+ * This file replaces the mock service with a real implementation using Firebase.
+ * It handles authentication, database operations (Firestore), and file storage.
  */
-import { Job, Company, JobSeeker, Admin, Review, JobType, LocationType, BlogPost, ReactionType, Reaction, Comment } from '../types';
+// FIX: Switched from Firebase v9 modular imports to v8 namespaced/compat syntax to fix import errors.
+// FIX: Use v8 compat import to make firebase.firestore available.
+import firebase from 'firebase/compat/app';
+import { db, auth, storage } from './firebaseConfig';
 
-// --- SIMULATED DATABASE ---
-let seekers: JobSeeker[] = [
-    { 
-      id: 101, 
-      name: 'Alex Doe', 
-      email: 'alex.doe@example.com', 
-      password: 'password123', 
-      phone: '123-456-7890', 
-      photoUrl: 'https://i.pravatar.cc/150?u=alex', 
-      skills: ['React', 'TypeScript', 'Node.js'], 
-      resumeUrl: '#', 
-      expectedSalary: 90000, 
-      appliedJobs: [1],
-      jobAlertsEnabled: true,
-      jobAlertsPreferences: {
-          keywords: ['React', 'TypeScript', 'Node.js'],
-          jobTypes: [JobType.FullTime],
-          locationTypes: [LocationType.Hybrid, LocationType.Remote],
-          minSalary: 85000,
-      }
-    },
-    { 
-      id: 102, 
-      name: 'Brenda Smith', 
-      email: 'brenda.smith@example.com', 
-      password: 'password123', 
-      phone: '234-567-8901', 
-      photoUrl: 'https://i.pravatar.cc/150?u=brenda', 
-      skills: ['Vue', 'JavaScript', 'CSS'], 
-      resumeUrl: '#', 
-      expectedSalary: 80000, 
-      appliedJobs: [],
-      jobAlertsEnabled: false,
-      jobAlertsPreferences: {
-          keywords: ['Vue', 'JavaScript', 'CSS'],
-          jobTypes: [],
-          locationTypes: [],
-          minSalary: 70000,
-      }
-    },
-];
-let companies: Company[] = [
-    { id: 201, name: 'Innovate Inc.', email: 'contact@innovate.com', password: 'password123', logo: 'https://i.pravatar.cc/150?u=innovate', description: 'A leading tech company.', website: 'https://innovate.com', contactInfo: '123- Innovate St.', officeAddress: '123 Tech Park, Silicon Valley, CA', reviews: [
-        { id: 1, reviewerName: 'Brenda Smith', rating: 4.5, comment: 'Great place to work!', date: '2023-10-26' },
-        { id: 2, reviewerName: 'External Person', rating: 5, comment: 'Excellent culture and benefits.', date: '2023-10-25' }
-    ], jobs: [1, 2] },
-    { id: 202, name: 'Creative Solutions', email: 'hr@creative.com', password: 'password123', logo: 'https://i.pravatar.cc/150?u=creative', description: 'We make creative software.', website: 'https://creative.com', contactInfo: '456- Creative Ave.', officeAddress: '456 Design Plaza, San Francisco, CA', reviews: [
-        { id: 3, reviewerName: 'Alex Doe', rating: 3, comment: 'It was okay, long hours.', date: '2023-10-24' }
-    ], jobs: [3] },
-];
-let jobs: Job[] = [
-    { id: 1, companyId: 201, title: 'Frontend Developer', description: 'Job description here...', location: 'New York, NY', experienceLevel: 'Mid-Level', salaryMin: 80000, salaryMax: 100000, jobType: JobType.FullTime, locationType: LocationType.Hybrid, applicants: [101], shortlisted: [], rejected: [] },
-    { id: 2, companyId: 201, title: 'Backend Developer', description: 'Job description here...', location: 'Remote', experienceLevel: 'Senior', salaryMin: 120000, salaryMax: 150000, jobType: JobType.FullTime, locationType: LocationType.Remote, applicants: [], shortlisted: [], rejected: [] },
-    { id: 3, companyId: 202, title: 'UI/UX Designer', description: 'Job description here...', location: 'San Francisco, CA', experienceLevel: 'Junior', salaryMin: 60000, salaryMax: 75000, jobType: JobType.Contract, locationType: LocationType.Onsite, applicants: [], shortlisted: [], rejected: [] },
-];
-let blogPosts: BlogPost[] = [
-    {
-        id: 1,
-        authorId: 201,
-        authorName: 'Innovate Inc.',
-        authorRole: 'company',
-        authorPhotoUrl: 'https://i.pravatar.cc/150?u=innovate',
-        content: 'We are excited to announce we are hiring for several new roles! Check out our open positions for Frontend and Backend developers.',
-        timestamp: new Date(Date.now() - 1000 * 60 * 60 * 24).toISOString(), // 1 day ago
-        reactions: [],
-        comments: [],
-    },
-    {
-        id: 2,
-        authorId: 101,
-        authorName: 'Alex Doe',
-        authorRole: 'seeker',
-        authorPhotoUrl: 'https://i.pravatar.cc/150?u=alex',
-        content: 'Just had a great interview experience! My tip for fellow developers: always be prepared to talk about a project you are passionate about. It really shows your skills and enthusiasm.',
-        timestamp: new Date(Date.now() - 1000 * 60 * 30).toISOString(), // 30 mins ago
-        reactions: [],
-        comments: [
-            { id: 1, authorId: 102, authorName: 'Brenda Smith', authorPhotoUrl: 'https://i.pravatar.cc/150?u=brenda', content: 'That\'s a great tip, Alex! Thanks for sharing.', timestamp: new Date(Date.now() - 1000 * 60 * 15).toISOString() }
-        ],
-    }
-];
-const admins: Admin[] = [
-    { id: 301, email: 'sidunnobiovi@gmail.com', password: '9Ga19eUz' },
-];
-// --- END SIMULATED DATABASE ---
+import { Job, Company, JobSeeker, Admin, Review, BlogPost, ReactionType, Reaction, Comment } from '../types';
 
 type UserRole = 'seeker' | 'company' | 'admin';
 type User = JobSeeker | Company | Admin;
 
-// Simulate API delay
-const delay = (ms: number) => new Promise(res => setTimeout(res, ms));
+// --- HELPER FUNCTIONS ---
+
+// Converts a Firestore document snapshot into a usable object, handling the ID and timestamps.
+const fromDoc = (doc: any) => {
+    const data = doc.data();
+    return {
+        ...data,
+        id: doc.id,
+        // Convert Firestore Timestamps to ISO strings for consistency
+        timestamp: data.timestamp?.toDate ? data.timestamp.toDate().toISOString() : data.timestamp,
+    };
+};
+
+// A generic function to upload a base64 data URL to Firebase Storage.
+const uploadDataUrl = async (path: string, dataUrl: string): Promise<string> => {
+    if (!dataUrl.startsWith('data:')) return dataUrl; // It's already a URL, no need to upload
+    // FIX: Use v8 storage syntax
+    const storageRef = storage.ref(path);
+    const snapshot = await storageRef.putString(dataUrl, 'data_url');
+    return await snapshot.ref.getDownloadURL();
+};
 
 export const api = {
   // --- AUTHENTICATION ---
-  authenticateUser: async (email: string, password: string, role: UserRole): Promise<{ user: User; role: UserRole } | { error: string }> => {
-    await delay(300);
+  authenticateUser: async (email: string, password: string, role: UserRole): Promise<User> => {
+    try {
+        // FIX: Use v8 auth syntax
+        let userCredential = await auth.signInWithEmailAndPassword(email, password);
+        const user = userCredential.user;
 
-    // Check for admin credentials first, regardless of the role selected in the UI
-    const adminUser = admins.find(u => u.email === email);
-    if (adminUser && adminUser.password === password) {
-        return { user: adminUser, role: 'admin' };
+        if (!user) {
+            throw new Error("Authentication failed.");
+        }
+
+        // After sign-in, fetch profile to confirm role
+        const userProfile = await api.getUserProfile(user.uid);
+        if (userProfile && userProfile.role === role) {
+            return userProfile.user;
+        } else if (userProfile) {
+            // Logged in successfully, but role mismatch
+            await auth.signOut();
+            throw new Error(`You are registered as a ${userProfile.role}, not a ${role}.`);
+        } else {
+             // User exists in Auth but not in our DB collections.
+            await auth.signOut();
+            throw new Error('User profile not found.');
+        }
+
+    } catch (error: any) {
+        // If user not found, create a new account
+        if (error.code === 'auth/user-not-found' || error.code === 'auth/invalid-credential') {
+            if (role === 'admin') throw new Error('Admin account cannot be created from login.');
+
+            // FIX: Use v8 auth syntax
+            const userCredential = await auth.createUserWithEmailAndPassword(email, password);
+            const user = userCredential.user;
+             if (!user) {
+                throw new Error("Account creation failed.");
+            }
+            let newUserProfile: User;
+
+            if (role === 'seeker') {
+                const newSeeker: JobSeeker = {
+                    id: user.uid,
+                    name: email.split('@')[0],
+                    email,
+                    phone: '',
+                    photoUrl: `https://i.pravatar.cc/150?u=${email}`,
+                    skills: [],
+                    resumeUrl: '',
+                    expectedSalary: 0,
+                    appliedJobs: [],
+                    jobAlertsEnabled: false,
+                    jobAlertsPreferences: { keywords: [], jobTypes: [], locationTypes: [], minSalary: 0 }
+                };
+                // FIX: Use v8 firestore syntax
+                await db.collection('seekers').doc(user.uid).set(newSeeker);
+                newUserProfile = newSeeker;
+            } else { // company
+                const newCompany: Company = {
+                    id: user.uid,
+                    name: email.split('@')[0],
+                    email,
+                    logo: `https://i.pravatar.cc/150?u=${email}`,
+                    description: '',
+                    website: '',
+                    contactInfo: '',
+                    officeAddress: '',
+                    reviews: [],
+                    jobs: [],
+                };
+                 // FIX: Use v8 firestore syntax
+                await db.collection('companies').doc(user.uid).set(newCompany);
+                newUserProfile = newCompany;
+            }
+            return newUserProfile;
+        }
+        // For other errors (e.g., wrong password), re-throw
+        throw error;
     }
+  },
 
-    let user: User | undefined;
-    
-    if (role === 'seeker') {
-      user = seekers.find(u => u.email === email);
-      if (user && user.password !== password) return { error: 'Invalid password.' };
-      if (!user) { // Auto-create user
-        const newSeeker: JobSeeker = {
-          id: Date.now(),
-          name: email.split('@')[0],
-          email,
-          password,
-          phone: '',
-          photoUrl: `https://i.pravatar.cc/150?u=${email}`,
-          skills: [],
-          resumeUrl: '',
-          expectedSalary: 0,
-          appliedJobs: [],
-          jobAlertsEnabled: false,
-          jobAlertsPreferences: {
-              keywords: [],
-              jobTypes: [],
-              locationTypes: [],
-              minSalary: 0,
-          }
-        };
-        seekers.push(newSeeker);
-        user = newSeeker;
+  logout: async () => {
+    // FIX: Use v8 auth syntax
+    await auth.signOut();
+  },
+  
+  // Fetches a user's profile from 'seekers' or 'companies' collections
+  getUserProfile: async (uid: string): Promise<{ user: User; role: UserRole } | null> => {
+      // FIX: Use v8 firestore syntax
+      const seekerRef = db.collection('seekers').doc(uid);
+      const seekerSnap = await seekerRef.get();
+      if (seekerSnap.exists) {
+          return { user: fromDoc(seekerSnap) as JobSeeker, role: 'seeker' };
       }
-    } else if (role === 'company') {
-      user = companies.find(u => u.email === email);
-      if (user && user.password !== password) return { error: 'Invalid password.' };
-      if (!user) { // Auto-create company
-        const newCompany: Company = {
-          id: Date.now(),
-          name: email.split('@')[0],
-          email,
-          password,
-          logo: `https://i.pravatar.cc/150?u=${email}`,
-          description: '',
-          website: '',
-          contactInfo: '',
-          officeAddress: '',
-          reviews: [],
-          jobs: [],
-        };
-        companies.push(newCompany);
-        user = newCompany;
-      }
-    }
 
-    if (user) {
-      return { user, role };
-    }
-    return { error: 'Invalid credentials.' };
+      const companyRef = db.collection('companies').doc(uid);
+      const companySnap = await companyRef.get();
+      if (companySnap.exists) {
+          return { user: fromDoc(companySnap) as Company, role: 'company' };
+      }
+      
+      const adminRef = db.collection('admins').doc(uid);
+      const adminSnap = await adminRef.get();
+      if (adminSnap.exists) {
+          return { user: fromDoc(adminSnap) as Admin, role: 'admin' };
+      }
+
+      return null;
   },
 
   // --- DATA FETCHING ---
-  getSeekers: async (): Promise<JobSeeker[]> => { await delay(100); return seekers; },
-  getCompanies: async (): Promise<Company[]> => { await delay(100); return companies; },
-  getJobs: async (): Promise<Job[]> => { await delay(100); return jobs; },
-  getBlogPosts: async (): Promise<BlogPost[]> => { await delay(100); return blogPosts; },
-
+  getSeekers: async (): Promise<JobSeeker[]> => {
+      // FIX: Use v8 firestore syntax
+      const snapshot = await db.collection('seekers').get();
+      return snapshot.docs.map(fromDoc) as JobSeeker[];
+  },
+  getCompanies: async (): Promise<Company[]> => {
+      // FIX: Use v8 firestore syntax
+      const snapshot = await db.collection('companies').get();
+      return snapshot.docs.map(fromDoc) as Company[];
+  },
+  getJobs: async (): Promise<Job[]> => {
+      // FIX: Use v8 firestore syntax
+      const snapshot = await db.collection('jobs').orderBy('title').get();
+      return snapshot.docs.map(fromDoc) as Job[];
+  },
+  getBlogPosts: async (): Promise<BlogPost[]> => {
+      // FIX: Use v8 firestore syntax
+      const snapshot = await db.collection('blogPosts').orderBy('timestamp', 'desc').get();
+      return snapshot.docs.map(fromDoc) as BlogPost[];
+  },
 
   // --- DATA MUTATION ---
   saveSeeker: async (seekerData: JobSeeker): Promise<JobSeeker> => {
-    await delay(200);
-    // ID of 0 indicates a new seeker
-    if (seekerData.id === 0) {
-      const newSeeker = { ...seekerData, id: Date.now() };
-      seekers.push(newSeeker);
-      return newSeeker;
-    }
-    // Existing ID means update
-    seekers = seekers.map(s => s.id === seekerData.id ? seekerData : s);
-    return seekerData;
+      // FIX: Use v8 firestore syntax
+      const seekerRef = db.collection('seekers').doc(seekerData.id);
+      const dataToSave = { ...seekerData };
+
+      // Handle file uploads
+      dataToSave.photoUrl = await uploadDataUrl(`profile_pictures/${dataToSave.id}`, dataToSave.photoUrl);
+      dataToSave.resumeUrl = await uploadDataUrl(`resumes/${dataToSave.id}`, dataToSave.resumeUrl);
+
+      await seekerRef.set(dataToSave, { merge: true });
+      const updatedSnap = await seekerRef.get();
+      return fromDoc(updatedSnap) as JobSeeker;
   },
   
   saveCompany: async (companyData: Company): Promise<Company> => {
-    await delay(200);
-    // ID of 0 indicates a new company
-    if (companyData.id === 0) {
-      const newCompany = { ...companyData, id: Date.now() };
-      companies.push(newCompany);
-      return newCompany;
-    }
-    // Existing ID means update
-    companies = companies.map(c => c.id === companyData.id ? companyData : c);
-    return companyData;
+      // FIX: Use v8 firestore syntax
+      const companyRef = db.collection('companies').doc(companyData.id);
+      const dataToSave = { ...companyData };
+      
+      // Handle logo upload
+      dataToSave.logo = await uploadDataUrl(`logos/${dataToSave.id}`, dataToSave.logo);
+
+      await companyRef.set(dataToSave, { merge: true });
+      const updatedSnap = await companyRef.get();
+      return fromDoc(updatedSnap) as Company;
   },
 
-  addReview: async(companyId: number, review: Omit<Review, 'id' | 'date'>): Promise<Company> => {
-    await delay(200);
-    const newReview = { ...review, id: Date.now(), date: new Date().toLocaleDateString() };
-    let updatedCompany: Company | undefined;
-    companies = companies.map(c => {
-      if (c.id === companyId) {
-        updatedCompany = { ...c, reviews: [...c.reviews, newReview] };
-        return updatedCompany;
-      }
-      return c;
-    });
-    if (!updatedCompany) throw new Error("Company not found");
-    return updatedCompany;
+  addReview: async(companyId: string, review: Omit<Review, 'id' | 'date'>): Promise<Company> => {
+      // FIX: Use v8 firestore syntax
+      const companyRef = db.collection('companies').doc(companyId);
+      const newReview = { 
+          ...review, 
+          id: db.collection('dummy').doc().id, // Generate a unique ID
+          date: new Date().toISOString() 
+      };
+      await companyRef.update({ reviews: firebase.firestore.FieldValue.arrayUnion(newReview) });
+      const updatedCompanySnap = await companyRef.get();
+      return fromDoc(updatedCompanySnap) as Company;
   },
 
   saveJob: async(jobData: Job | Omit<Job, 'id' | 'applicants' | 'shortlisted' | 'rejected'>): Promise<Job> => {
-    await delay(200);
-    if ('id' in jobData && jobData.id) { // Update existing job
-        const index = jobs.findIndex(j => j.id === jobData.id);
-        if (index === -1) throw new Error("Job not found");
-        const fullJob = jobs[index];
-        const updatedJob = { ...fullJob, ...jobData };
-        jobs[index] = updatedJob;
-        return updatedJob;
-    } else { // Create new job
-        const newJob: Job = {
-            ...(jobData as Omit<Job, 'id' | 'applicants' | 'shortlisted' | 'rejected'>),
-            id: Date.now(),
+    // FIX: Use v8 firestore syntax
+    if ('id' in jobData && jobData.id) { // Update
+        const jobRef = db.collection('jobs').doc(jobData.id);
+        await jobRef.update({ ...jobData });
+        const updatedSnap = await jobRef.get();
+        return fromDoc(updatedSnap) as Job;
+    } else { // Create
+        const newJobData = {
+            ...jobData,
             applicants: [],
             shortlisted: [],
             rejected: []
         };
-        jobs = [newJob, ...jobs];
-        return newJob;
+        const docRef = await db.collection('jobs').add(newJobData);
+        const newSnap = await docRef.get();
+        return fromDoc(newSnap) as Job;
     }
   },
   
   addBlogPost: async(postData: Omit<BlogPost, 'id' | 'timestamp' | 'reactions' | 'comments'>): Promise<BlogPost> => {
-    await delay(200);
-    const newPost: BlogPost = {
-        ...postData,
-        id: Date.now(),
-        timestamp: new Date().toISOString(),
-        reactions: [],
-        comments: [],
-    };
-    blogPosts = [newPost, ...blogPosts];
-    return newPost;
+      // FIX: Use v8 firestore syntax
+      const newPostData = {
+          ...postData,
+          timestamp: firebase.firestore.Timestamp.now(),
+          reactions: [],
+          comments: [],
+      };
+      const docRef = await db.collection('blogPosts').add(newPostData);
+      const newSnap = await docRef.get();
+      return fromDoc(newSnap) as BlogPost;
   },
   
-  updateBlogPost: async(postId: number, content: string): Promise<BlogPost> => {
-    await delay(200);
-    let updatedPost: BlogPost | undefined;
-    blogPosts = blogPosts.map(p => {
-        if (p.id === postId) {
-            updatedPost = { ...p, content };
-            return updatedPost;
+  updateBlogPost: async(postId: string, content: string): Promise<BlogPost> => {
+    // FIX: Use v8 firestore syntax
+    const postRef = db.collection('blogPosts').doc(postId);
+    await postRef.update({ content });
+    return fromDoc(await postRef.get()) as BlogPost;
+  },
+  
+  addOrUpdateReaction: async(postId: string, userId: string, type: ReactionType): Promise<BlogPost> => {
+    // FIX: Use v8 firestore syntax
+    const postRef = db.collection('blogPosts').doc(postId);
+    const postSnap = await postRef.get();
+    const post = fromDoc(postSnap) as BlogPost;
+
+    const existingReaction = post.reactions.find(r => r.userId === userId);
+    if (existingReaction) {
+        // If it's the same reaction, remove it. Otherwise, update it.
+        const reactionToRemove = { ...existingReaction };
+        await postRef.update({ reactions: firebase.firestore.FieldValue.arrayRemove(reactionToRemove) });
+        if (existingReaction.type !== type) {
+            await postRef.update({ reactions: firebase.firestore.FieldValue.arrayUnion({ userId, type }) });
         }
-        return p;
-    });
-    if (!updatedPost) throw new Error("Post not found");
-    return updatedPost;
-  },
-  
-  addOrUpdateReaction: async(postId: number, userId: number, type: ReactionType): Promise<BlogPost> => {
-    await delay(100);
-    const postIndex = blogPosts.findIndex(p => p.id === postId);
-    if (postIndex === -1) throw new Error("Post not found");
-
-    const originalPost = blogPosts[postIndex];
-    const existingReactionIndex = originalPost.reactions.findIndex(r => r.userId === userId);
-    
-    let newReactions: Reaction[];
-
-    if (existingReactionIndex > -1) {
-      // User has reacted before
-      const existingReaction = originalPost.reactions[existingReactionIndex];
-      if (existingReaction.type === type) {
-        // Same reaction clicked, so remove it (toggle off)
-        newReactions = originalPost.reactions.filter((_, index) => index !== existingReactionIndex);
-      } else {
-        // Different reaction clicked, so update it
-        newReactions = originalPost.reactions.map((reaction, index) => 
-            index === existingReactionIndex ? { ...reaction, type: type } : reaction
-        );
-      }
     } else {
-      // New reaction
-      newReactions = [...originalPost.reactions, { userId, type }];
+        await postRef.update({ reactions: firebase.firestore.FieldValue.arrayUnion({ userId, type }) });
     }
-    
-    const updatedPost = { ...originalPost, reactions: newReactions };
-    blogPosts[postIndex] = updatedPost;
-    return updatedPost;
+    return fromDoc(await postRef.get()) as BlogPost;
   },
 
-  addComment: async(postId: number, commentData: Omit<Comment, 'id' | 'timestamp'>): Promise<BlogPost> => {
-    await delay(200);
-    const postIndex = blogPosts.findIndex(p => p.id === postId);
-    if (postIndex === -1) throw new Error("Post not found");
-
-    const newComment: Comment = {
+  addComment: async(postId: string, commentData: Omit<Comment, 'id' | 'timestamp'>): Promise<BlogPost> => {
+    // FIX: Use v8 firestore syntax
+    const postRef = db.collection('blogPosts').doc(postId);
+    const newComment = {
       ...commentData,
-      id: Date.now(),
-      timestamp: new Date().toISOString(),
+      id: db.collection('dummy').doc().id,
+      timestamp: new Date().toISOString()
     };
-    
-    const originalPost = blogPosts[postIndex];
-    const updatedPost = { ...originalPost, comments: [...originalPost.comments, newComment] };
-    blogPosts[postIndex] = updatedPost;
-
-    return updatedPost;
+    await postRef.update({ comments: firebase.firestore.FieldValue.arrayUnion(newComment) });
+    return fromDoc(await postRef.get()) as BlogPost;
   },
 
-  updateComment: async(postId: number, commentId: number, content: string): Promise<BlogPost> => {
-    await delay(200);
-    const postIndex = blogPosts.findIndex(p => p.id === postId);
-    if (postIndex === -1) throw new Error("Post not found");
-
-    const originalPost = blogPosts[postIndex];
-    
-    const updatedComments = originalPost.comments.map(c => {
-        if (c.id === commentId) {
-            return { ...c, content };
-        }
-        return c;
-    });
-
-    const updatedPost = { ...originalPost, comments: updatedComments };
-    blogPosts[postIndex] = updatedPost;
-    
-    return updatedPost;
+  updateComment: async(postId: string, commentId: string, content: string): Promise<BlogPost> => {
+    // FIX: Use v8 firestore syntax
+    const postRef = db.collection('blogPosts').doc(postId);
+    const postSnap = await postRef.get();
+    const post = fromDoc(postSnap) as BlogPost;
+    const updatedComments = post.comments.map(c => c.id === commentId ? { ...c, content } : c);
+    await postRef.update({ comments: updatedComments });
+    // Re-fetch the entire post to ensure data consistency
+    const updatedSnap = await postRef.get();
+    return fromDoc(updatedSnap) as BlogPost;
   },
 
-  deleteComment: async(postId: number, commentId: number): Promise<BlogPost> => {
-    await delay(200);
-    const postIndex = blogPosts.findIndex(p => p.id === postId);
-    if (postIndex === -1) throw new Error("Post not found");
-    
-    const originalPost = blogPosts[postIndex];
-    const updatedComments = originalPost.comments.filter(c => c.id !== commentId);
-    
-    const updatedPost = { ...originalPost, comments: updatedComments };
-    blogPosts[postIndex] = updatedPost;
-
-    return updatedPost;
+  deleteComment: async(postId: string, commentId: string): Promise<BlogPost> => {
+    // FIX: Use v8 firestore syntax
+    const postRef = db.collection('blogPosts').doc(postId);
+    const postSnap = await postRef.get();
+    const post = fromDoc(postSnap) as BlogPost;
+    const commentToDelete = post.comments.find(c => c.id === commentId);
+    if (commentToDelete) {
+        await postRef.update({ comments: firebase.firestore.FieldValue.arrayRemove(commentToDelete) });
+    }
+    return fromDoc(await postRef.get()) as BlogPost;
   },
 
   // --- ADMIN ACTIONS ---
-  deleteEntity: async(type: 'job' | 'company' | 'seeker' | 'blogPost', id: number): Promise<boolean> => {
-    await delay(300);
-    if (type === 'job') jobs = jobs.filter(j => j.id !== id);
-    if (type === 'seeker') seekers = seekers.filter(s => s.id !== id);
-    if (type === 'blogPost') blogPosts = blogPosts.filter(p => p.id !== id);
+  deleteEntity: async(type: 'job' | 'company' | 'seeker' | 'blogPost', id: string): Promise<boolean> => {
+    const collectionName = type === 'blogPost' ? 'blogPosts' : `${type}s`;
+    // FIX: Use v8 firestore syntax
+    await db.collection(collectionName).doc(id).delete();
+    
+    // If a company is deleted, delete its jobs as well
     if (type === 'company') {
-        companies = companies.filter(c => c.id !== id);
-        // Also remove jobs associated with that company
-        jobs = jobs.filter(j => j.companyId !== id);
+        const jobsQuery = db.collection('jobs').where('companyId', '==', id);
+        const jobsSnapshot = await jobsQuery.get();
+        for (const jobDoc of jobsSnapshot.docs) {
+            await jobDoc.ref.delete();
+        }
     }
     return true;
   }

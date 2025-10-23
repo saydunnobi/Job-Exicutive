@@ -13,13 +13,13 @@ interface SeekerDashboardProps {
   seeker: JobSeeker;
   jobs: Job[];
   companies: Company[];
-  onAddReview: (companyId: number, review: Omit<Review, 'id' | 'date'>) => void;
+  onAddReview: (companyId: string, review: Omit<Review, 'id' | 'date' | 'authorId'>) => void;
   onSaveProfile: (updatedSeeker: JobSeeker) => void;
 }
 
 const SeekerDashboard: React.FC<SeekerDashboardProps> = ({ seeker, jobs, companies, onAddReview, onSaveProfile }) => {
-  const [selectedJobId, setSelectedJobId] = useState<number | null>(null);
-  const [appliedJobs, setAppliedJobs] = useState<number[]>(seeker.appliedJobs);
+  const [selectedJobId, setSelectedJobId] = useState<string | null>(null);
+  const [appliedJobs, setAppliedJobs] = useState<string[]>(seeker.appliedJobs);
   const [isReviewModalOpen, setIsReviewModalOpen] = useState(false);
   const [reviewingCompany, setReviewingCompany] = useState<Company | null>(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -30,7 +30,7 @@ const SeekerDashboard: React.FC<SeekerDashboardProps> = ({ seeker, jobs, compani
   const [selectedExperience, setSelectedExperience] = useState('');
   const [minSalary, setMinSalary] = useState(0);
 
-  const handleViewDetails = (jobId: number) => {
+  const handleViewDetails = (jobId: string) => {
     setSelectedJobId(jobId);
   };
   
@@ -38,13 +38,15 @@ const SeekerDashboard: React.FC<SeekerDashboardProps> = ({ seeker, jobs, compani
     setSelectedJobId(null);
   };
   
-  const handleApply = (jobId: number) => {
+  const handleApply = (jobId: string) => {
     if (!appliedJobs.includes(jobId)) {
-        setAppliedJobs([...appliedJobs, jobId]);
+        const updatedAppliedJobs = [...appliedJobs, jobId];
+        setAppliedJobs(updatedAppliedJobs);
+        onSaveProfile({ ...seeker, appliedJobs: updatedAppliedJobs });
     }
   };
 
-  const handleLeaveReview = (companyId: number) => {
+  const handleLeaveReview = (companyId: string) => {
     const companyToReview = companies.find(c => c.id === companyId);
     if (companyToReview) {
         setSelectedJobId(null); // Close details modal first
@@ -53,7 +55,7 @@ const SeekerDashboard: React.FC<SeekerDashboardProps> = ({ seeker, jobs, compani
     }
   };
 
-  const handleSubmitReview = (review: Omit<Review, 'id' | 'date'>) => {
+  const handleSubmitReview = (review: Omit<Review, 'id' | 'date' | 'authorId'>) => {
     if (reviewingCompany) {
         onAddReview(reviewingCompany.id, { ...review, reviewerName: seeker.name });
         setIsReviewModalOpen(false);
