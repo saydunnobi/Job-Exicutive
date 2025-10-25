@@ -7,8 +7,6 @@ import { JobSeeker, Company, Admin, Job, Review, BlogPost, ReactionType, Comment
 import { api } from './services/apiService';
 import BlogPage from './components/BlogPage';
 import { BriefcaseIcon, NewspaperIcon } from './components/icons';
-// FIX: Removed incorrect Firebase v9 import. The v8-style `auth` object will be used instead.
-import { auth } from './services/firebaseConfig';
 
 type User = JobSeeker | Company | Admin;
 type UserRole = 'seeker' | 'company' | 'admin';
@@ -48,7 +46,7 @@ const App: React.FC = () => {
     const [currentUser, setCurrentUser] = useState<User | null>(null);
     const [currentUserRole, setCurrentUserRole] = useState<UserRole | null>(null);
     const [authError, setAuthError] = useState<string | null>(null);
-    const [isLoading, setIsLoading] = useState(true);
+    const [isLoading, setIsLoading] = useState(false);
     
     // UI State
     const [activeView, setActiveView] = useState<ActiveView>('dashboard');
@@ -70,37 +68,30 @@ const App: React.FC = () => {
             setBlogPosts(postsData);
             setIsLoading(false);
         };
-        loadData();
+
+        if (currentUser) {
+            loadData();
+        } else {
+            // Clear data on logout
+            setSeekers([]);
+            setCompanies([]);
+            setJobs([]);
+            setBlogPosts([]);
+        }
     }, [currentUser]); // Reload data when user changes
 
-    // Firebase Auth State Listener
-    useEffect(() => {
-        // FIX: Switched from Firebase v9 `onAuthStateChanged(auth, ...)` to v8 `auth.onAuthStateChanged(...)` syntax.
-        const unsubscribe = auth.onAuthStateChanged(async (user) => {
-            if (user) {
-                const userProfile = await api.getUserProfile(user.uid);
-                if (userProfile) {
-                    setCurrentUser(userProfile.user);
-                    setCurrentUserRole(userProfile.role);
-                } else {
-                    // Profile not in DB, force logout
-                    await api.logout();
-                }
-            } else {
-                setCurrentUser(null);
-                setCurrentUserRole(null);
-            }
-            setIsLoading(false);
-        });
-        return () => unsubscribe(); // Cleanup subscription on unmount
-    }, []);
 
     const handleLogin = async (email: string, password: string, role: UserRole) => {
         setAuthError(null);
         setIsLoading(true);
         try {
-            await api.authenticateUser(email, password, role);
-            // onAuthStateChanged will handle setting the current user
+            const userProfile = await api.authenticateUser(email, password, role);
+             if (userProfile) {
+                setCurrentUser(userProfile.user);
+                setCurrentUserRole(userProfile.role);
+            } else {
+                throw new Error("Invalid credentials or role.");
+            }
         } catch (error: any) {
             setAuthError(error.message);
         } finally {
@@ -110,6 +101,8 @@ const App: React.FC = () => {
 
     const handleLogout = async () => {
         await api.logout();
+        setCurrentUser(null);
+        setCurrentUserRole(null);
     };
     
     const handleSaveSeekerProfile = async (updatedSeeker: JobSeeker) => {
@@ -279,7 +272,7 @@ const App: React.FC = () => {
     };
 
 
-    if (isLoading) {
+    if (isLoading && !currentUser) {
         return <div className="min-h-screen flex items-center justify-center text-xl font-semibold text-primary">Loading Job Executive...</div>;
     }
 

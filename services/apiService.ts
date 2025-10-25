@@ -1,322 +1,315 @@
 /**
- * Firebase API Service
- * This file replaces the mock service with a real implementation using Firebase.
- * It handles authentication, database operations (Firestore), and file storage.
+ * Mock API Service
+ * This file simulates a backend API service using in-memory data.
+ * It's designed to be a drop-in replacement for the previous Firebase service,
+ * allowing the frontend to function while the Django/PostgreSQL backend is being developed.
  */
-// FIX: Switched from Firebase v9 modular imports to v8 namespaced/compat syntax to fix import errors.
-// FIX: Use v8 compat import to make firebase.firestore available.
-import firebase from 'firebase/compat/app';
-import { db, auth, storage } from './firebaseConfig';
-
-import { Job, Company, JobSeeker, Admin, Review, BlogPost, ReactionType, Reaction, Comment } from '../types';
+import { Job, Company, JobSeeker, Admin, Review, BlogPost, ReactionType, Reaction, Comment, JobType, LocationType } from '../types';
 
 type UserRole = 'seeker' | 'company' | 'admin';
 type User = JobSeeker | Company | Admin;
 
-// --- HELPER FUNCTIONS ---
+const MOCK_DELAY = 200; // ms
 
-// Converts a Firestore document snapshot into a usable object, handling the ID and timestamps.
-const fromDoc = (doc: any) => {
-    const data = doc.data();
-    return {
-        ...data,
-        id: doc.id,
-        // Convert Firestore Timestamps to ISO strings for consistency
-        timestamp: data.timestamp?.toDate ? data.timestamp.toDate().toISOString() : data.timestamp,
-    };
-};
+// --- MOCK DATABASE ---
 
-// A generic function to upload a base64 data URL to Firebase Storage.
-const uploadDataUrl = async (path: string, dataUrl: string): Promise<string> => {
-    if (!dataUrl.startsWith('data:')) return dataUrl; // It's already a URL, no need to upload
-    // FIX: Use v8 storage syntax
-    const storageRef = storage.ref(path);
-    const snapshot = await storageRef.putString(dataUrl, 'data_url');
-    return await snapshot.ref.getDownloadURL();
-};
+let mockCompanies: Company[] = [
+  {
+    id: 'company1',
+    name: 'Innovate Inc.',
+    email: 'contact@innovate.com',
+    logo: `https://i.pravatar.cc/150?u=contact@innovate.com`,
+    description: 'A leading tech company focused on innovative solutions for the modern world. We value creativity, collaboration, and cutting-edge technology.',
+    website: 'https://innovate.com',
+    contactInfo: '555-0101',
+    officeAddress: '123 Tech Avenue, Silicon Valley, CA',
+    reviews: [
+      { id: 'review1', authorId: 'seeker1', reviewerName: 'Alex Doe', rating: 5, comment: 'Great company culture and challenging projects!', date: new Date(Date.now() - 86400000 * 5).toISOString() },
+    ],
+    jobs: ['job1', 'job2'],
+  },
+  {
+    id: 'company2',
+    name: 'Creative Solutions',
+    email: 'hr@creative.com',
+    logo: `https://i.pravatar.cc/150?u=hr@creative.com`,
+    description: 'We are a design-focused agency that helps brands tell their stories. Our team is passionate about design, strategy, and user experience.',
+    website: 'https://creative.com',
+    contactInfo: '555-0102',
+    officeAddress: '456 Design Blvd, New York, NY',
+    reviews: [
+        { id: 'review2', authorId: 'some-other-user', reviewerName: 'Jane Smith', rating: 4, comment: 'Good work-life balance, but management can be a bit disorganized.', date: new Date(Date.now() - 86400000 * 10).toISOString() },
+    ],
+    jobs: ['job3'],
+  },
+];
 
-export const api = {
-  // --- AUTHENTICATION ---
-  authenticateUser: async (email: string, password: string, role: UserRole): Promise<User> => {
-    try {
-        // FIX: Use v8 auth syntax
-        let userCredential = await auth.signInWithEmailAndPassword(email, password);
-        const user = userCredential.user;
-
-        if (!user) {
-            throw new Error("Authentication failed.");
-        }
-
-        // After sign-in, fetch profile to confirm role
-        const userProfile = await api.getUserProfile(user.uid);
-        if (userProfile && userProfile.role === role) {
-            return userProfile.user;
-        } else if (userProfile) {
-            // Logged in successfully, but role mismatch
-            await auth.signOut();
-            throw new Error(`You are registered as a ${userProfile.role}, not a ${role}.`);
-        } else {
-             // User exists in Auth but not in our DB collections.
-            await auth.signOut();
-            throw new Error('User profile not found.');
-        }
-
-    } catch (error: any) {
-        // If user not found, create a new account
-        if (error.code === 'auth/user-not-found' || error.code === 'auth/invalid-credential') {
-            if (role === 'admin') throw new Error('Admin account cannot be created from login.');
-
-            // FIX: Use v8 auth syntax
-            const userCredential = await auth.createUserWithEmailAndPassword(email, password);
-            const user = userCredential.user;
-             if (!user) {
-                throw new Error("Account creation failed.");
-            }
-            let newUserProfile: User;
-
-            if (role === 'seeker') {
-                const newSeeker: JobSeeker = {
-                    id: user.uid,
-                    name: email.split('@')[0],
-                    email,
-                    phone: '',
-                    photoUrl: `https://i.pravatar.cc/150?u=${email}`,
-                    skills: [],
-                    resumeUrl: '',
-                    expectedSalary: 0,
-                    appliedJobs: [],
-                    jobAlertsEnabled: false,
-                    jobAlertsPreferences: { keywords: [], jobTypes: [], locationTypes: [], minSalary: 0 }
-                };
-                // FIX: Use v8 firestore syntax
-                await db.collection('seekers').doc(user.uid).set(newSeeker);
-                newUserProfile = newSeeker;
-            } else { // company
-                const newCompany: Company = {
-                    id: user.uid,
-                    name: email.split('@')[0],
-                    email,
-                    logo: `https://i.pravatar.cc/150?u=${email}`,
-                    description: '',
-                    website: '',
-                    contactInfo: '',
-                    officeAddress: '',
-                    reviews: [],
-                    jobs: [],
-                };
-                 // FIX: Use v8 firestore syntax
-                await db.collection('companies').doc(user.uid).set(newCompany);
-                newUserProfile = newCompany;
-            }
-            return newUserProfile;
-        }
-        // For other errors (e.g., wrong password), re-throw
-        throw error;
+let mockSeekers: JobSeeker[] = [
+  {
+    id: 'seeker1',
+    name: 'Alex Doe',
+    email: 'alex.doe@example.com',
+    phone: '123-456-7890',
+    photoUrl: `https://i.pravatar.cc/150?u=alex.doe@example.com`,
+    skills: ['React', 'TypeScript', 'Node.js', 'GraphQL'],
+    resumeUrl: '#',
+    expectedSalary: 90000,
+    appliedJobs: ['job1'],
+    jobAlertsEnabled: true,
+    jobAlertsPreferences: {
+      keywords: ['react', 'frontend'],
+      jobTypes: [JobType.FullTime],
+      locationTypes: [LocationType.Remote, LocationType.Hybrid],
+      minSalary: 80000,
     }
   },
+];
 
-  logout: async () => {
-    // FIX: Use v8 auth syntax
-    await auth.signOut();
+let mockAdmins: Admin[] = [
+    { id: 'admin1', email: 'admin@jobexecutive.com' }
+];
+
+let mockJobs: Job[] = [
+  {
+    id: 'job1',
+    companyId: 'company1',
+    title: 'Senior Frontend Developer',
+    description: 'We are looking for an experienced Frontend Developer to join our team. You will be responsible for building the client-side of our web applications. You should be able to translate our company and customer needs into functional and appealing interactive applications.',
+    location: 'Remote',
+    experienceLevel: 'Senior',
+    salaryMin: 120000,
+    salaryMax: 150000,
+    jobType: JobType.FullTime,
+    locationType: LocationType.Remote,
+    applicants: ['seeker1'],
+    shortlisted: [],
+    rejected: [],
+  },
+  {
+    id: 'job2',
+    companyId: 'company1',
+    title: 'Product Manager',
+    description: 'As a Product Manager, you will be responsible for the product planning and execution throughout the Product Lifecycle, including: gathering and prioritizing product and customer requirements, defining the product vision, and working closely with engineering, sales, marketing and support to ensure revenue and customer satisfaction goals are met.',
+    location: 'Silicon Valley, CA',
+    experienceLevel: 'Mid-Level',
+    salaryMin: 100000,
+    salaryMax: 130000,
+    jobType: JobType.FullTime,
+    locationType: LocationType.Onsite,
+    applicants: [],
+    shortlisted: [],
+    rejected: [],
+  },
+  {
+    id: 'job3',
+    companyId: 'company2',
+    title: 'UI/UX Designer',
+    description: 'We are seeking a talented UI/UX Designer to create amazing user experiences. The ideal candidate should have an eye for clean and artful design, possess superior UI skills and be able to translate high-level requirements into interaction flows and artifacts, and transform them into beautiful, intuitive, and functional user interfaces.',
+    location: 'New York, NY',
+    experienceLevel: 'Entry-Level',
+    salaryMin: 60000,
+    salaryMax: 80000,
+    jobType: JobType.Contract,
+    locationType: LocationType.Hybrid,
+    applicants: [],
+    shortlisted: [],
+    rejected: [],
+  },
+];
+
+let mockBlogPosts: BlogPost[] = [
+  {
+    id: 'post1',
+    authorId: 'seeker1',
+    authorName: 'Alex Doe',
+    authorRole: 'seeker',
+    authorPhotoUrl: mockSeekers[0].photoUrl,
+    content: "Just had a great interview experience with Innovate Inc. Very professional team!",
+    timestamp: new Date(Date.now() - 86400000 * 2).toISOString(), // 2 days ago
+    reactions: [
+      { userId: 'company1', type: 'like' },
+    ],
+    comments: [
+      { id: 'comment1', authorId: 'company1', authorName: 'Innovate Inc.', authorPhotoUrl: mockCompanies[0].logo, content: 'Glad to hear that, Alex! We enjoyed our conversation as well.', timestamp: new Date(Date.now() - 86400000).toISOString() },
+    ],
+  },
+];
+
+
+// --- API FUNCTIONS ---
+const findUser = (email: string, role: UserRole) => {
+    if (role === 'seeker') return mockSeekers.find(u => u.email === email);
+    if (role === 'company') return mockCompanies.find(u => u.email === email);
+    if (role === 'admin') return mockAdmins.find(u => u.email === email);
+    return null;
+}
+
+export const api = {
+  authenticateUser: async (email: string, password: string, role: UserRole): Promise<{ user: User; role: UserRole } | null> => {
+    return new Promise((resolve, reject) => {
+      setTimeout(() => {
+        const user = findUser(email, role);
+        if (user) {
+          resolve({ user, role });
+        } else {
+          // In this mock, we don't handle user creation on login, just failure.
+          reject(new Error('User not found. Please check your email and role.'));
+        }
+      }, MOCK_DELAY);
+    });
+  },
+
+  logout: async (): Promise<void> => {
+    return Promise.resolve();
   },
   
-  // Fetches a user's profile from 'seekers' or 'companies' collections
   getUserProfile: async (uid: string): Promise<{ user: User; role: UserRole } | null> => {
-      // FIX: Use v8 firestore syntax
-      const seekerRef = db.collection('seekers').doc(uid);
-      const seekerSnap = await seekerRef.get();
-      if (seekerSnap.exists) {
-          return { user: fromDoc(seekerSnap) as JobSeeker, role: 'seeker' };
-      }
+     return new Promise(resolve => {
+        setTimeout(() => {
+            let user: User | undefined;
+            let role: UserRole | undefined;
 
-      const companyRef = db.collection('companies').doc(uid);
-      const companySnap = await companyRef.get();
-      if (companySnap.exists) {
-          return { user: fromDoc(companySnap) as Company, role: 'company' };
-      }
-      
-      const adminRef = db.collection('admins').doc(uid);
-      const adminSnap = await adminRef.get();
-      if (adminSnap.exists) {
-          return { user: fromDoc(adminSnap) as Admin, role: 'admin' };
-      }
+            user = mockSeekers.find(u => u.id === uid);
+            if (user) role = 'seeker';
+            
+            if (!user) {
+                user = mockCompanies.find(u => u.id === uid);
+                if(user) role = 'company';
+            }
 
-      return null;
-  },
-
-  // --- DATA FETCHING ---
-  getSeekers: async (): Promise<JobSeeker[]> => {
-      // FIX: Use v8 firestore syntax
-      const snapshot = await db.collection('seekers').get();
-      return snapshot.docs.map(fromDoc) as JobSeeker[];
-  },
-  getCompanies: async (): Promise<Company[]> => {
-      // FIX: Use v8 firestore syntax
-      const snapshot = await db.collection('companies').get();
-      return snapshot.docs.map(fromDoc) as Company[];
-  },
-  getJobs: async (): Promise<Job[]> => {
-      // FIX: Use v8 firestore syntax
-      const snapshot = await db.collection('jobs').orderBy('title').get();
-      return snapshot.docs.map(fromDoc) as Job[];
-  },
-  getBlogPosts: async (): Promise<BlogPost[]> => {
-      // FIX: Use v8 firestore syntax
-      const snapshot = await db.collection('blogPosts').orderBy('timestamp', 'desc').get();
-      return snapshot.docs.map(fromDoc) as BlogPost[];
+            if (!user) {
+                user = mockAdmins.find(u => u.id === uid);
+                 if(user) role = 'admin';
+            }
+            
+            if(user && role) {
+                resolve({ user, role });
+            } else {
+                resolve(null);
+            }
+        }, MOCK_DELAY)
+     })
   },
 
-  // --- DATA MUTATION ---
+  getSeekers: async (): Promise<JobSeeker[]> => Promise.resolve([...mockSeekers]),
+  getCompanies: async (): Promise<Company[]> => Promise.resolve([...mockCompanies]),
+  getJobs: async (): Promise<Job[]> => Promise.resolve([...mockJobs]),
+  getBlogPosts: async (): Promise<BlogPost[]> => Promise.resolve([...mockBlogPosts].sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())),
+
   saveSeeker: async (seekerData: JobSeeker): Promise<JobSeeker> => {
-      // FIX: Use v8 firestore syntax
-      const seekerRef = db.collection('seekers').doc(seekerData.id);
-      const dataToSave = { ...seekerData };
-
-      // Handle file uploads
-      dataToSave.photoUrl = await uploadDataUrl(`profile_pictures/${dataToSave.id}`, dataToSave.photoUrl);
-      dataToSave.resumeUrl = await uploadDataUrl(`resumes/${dataToSave.id}`, dataToSave.resumeUrl);
-
-      await seekerRef.set(dataToSave, { merge: true });
-      const updatedSnap = await seekerRef.get();
-      return fromDoc(updatedSnap) as JobSeeker;
+      mockSeekers = mockSeekers.map(s => s.id === seekerData.id ? seekerData : s);
+      return Promise.resolve(seekerData);
   },
   
   saveCompany: async (companyData: Company): Promise<Company> => {
-      // FIX: Use v8 firestore syntax
-      const companyRef = db.collection('companies').doc(companyData.id);
-      const dataToSave = { ...companyData };
-      
-      // Handle logo upload
-      dataToSave.logo = await uploadDataUrl(`logos/${dataToSave.id}`, dataToSave.logo);
-
-      await companyRef.set(dataToSave, { merge: true });
-      const updatedSnap = await companyRef.get();
-      return fromDoc(updatedSnap) as Company;
+      mockCompanies = mockCompanies.map(c => c.id === companyData.id ? companyData : c);
+      return Promise.resolve(companyData);
   },
 
   addReview: async(companyId: string, review: Omit<Review, 'id' | 'date'>): Promise<Company> => {
-      // FIX: Use v8 firestore syntax
-      const companyRef = db.collection('companies').doc(companyId);
-      const newReview = { 
+      const company = mockCompanies.find(c => c.id === companyId);
+      if (!company) throw new Error("Company not found");
+      const newReview: Review = { 
           ...review, 
-          id: db.collection('dummy').doc().id, // Generate a unique ID
+          id: `review-${Date.now()}`,
           date: new Date().toISOString() 
       };
-      await companyRef.update({ reviews: firebase.firestore.FieldValue.arrayUnion(newReview) });
-      const updatedCompanySnap = await companyRef.get();
-      return fromDoc(updatedCompanySnap) as Company;
+      company.reviews.push(newReview);
+      return Promise.resolve({ ...company });
   },
 
   saveJob: async(jobData: Job | Omit<Job, 'id' | 'applicants' | 'shortlisted' | 'rejected'>): Promise<Job> => {
-    // FIX: Use v8 firestore syntax
     if ('id' in jobData && jobData.id) { // Update
-        const jobRef = db.collection('jobs').doc(jobData.id);
-        await jobRef.update({ ...jobData });
-        const updatedSnap = await jobRef.get();
-        return fromDoc(updatedSnap) as Job;
+        mockJobs = mockJobs.map(j => j.id === jobData.id ? jobData as Job : j);
+        return Promise.resolve(jobData as Job);
     } else { // Create
-        const newJobData = {
+        const newJob: Job = {
+            id: `job-${Date.now()}`,
             ...jobData,
             applicants: [],
             shortlisted: [],
             rejected: []
         };
-        const docRef = await db.collection('jobs').add(newJobData);
-        const newSnap = await docRef.get();
-        return fromDoc(newSnap) as Job;
+        mockJobs.unshift(newJob);
+        return Promise.resolve(newJob);
     }
   },
   
   addBlogPost: async(postData: Omit<BlogPost, 'id' | 'timestamp' | 'reactions' | 'comments'>): Promise<BlogPost> => {
-      // FIX: Use v8 firestore syntax
-      const newPostData = {
+      const newPost: BlogPost = {
           ...postData,
-          timestamp: firebase.firestore.Timestamp.now(),
+          id: `post-${Date.now()}`,
+          timestamp: new Date().toISOString(),
           reactions: [],
           comments: [],
       };
-      const docRef = await db.collection('blogPosts').add(newPostData);
-      const newSnap = await docRef.get();
-      return fromDoc(newSnap) as BlogPost;
+      mockBlogPosts.unshift(newPost);
+      return Promise.resolve(newPost);
   },
   
   updateBlogPost: async(postId: string, content: string): Promise<BlogPost> => {
-    // FIX: Use v8 firestore syntax
-    const postRef = db.collection('blogPosts').doc(postId);
-    await postRef.update({ content });
-    return fromDoc(await postRef.get()) as BlogPost;
+    const post = mockBlogPosts.find(p => p.id === postId);
+    if (!post) throw new Error("Post not found");
+    post.content = content;
+    return Promise.resolve({ ...post });
   },
   
   addOrUpdateReaction: async(postId: string, userId: string, type: ReactionType): Promise<BlogPost> => {
-    // FIX: Use v8 firestore syntax
-    const postRef = db.collection('blogPosts').doc(postId);
-    const postSnap = await postRef.get();
-    const post = fromDoc(postSnap) as BlogPost;
+    const post = mockBlogPosts.find(p => p.id === postId);
+    if (!post) throw new Error("Post not found");
 
-    const existingReaction = post.reactions.find(r => r.userId === userId);
-    if (existingReaction) {
-        // If it's the same reaction, remove it. Otherwise, update it.
-        const reactionToRemove = { ...existingReaction };
-        await postRef.update({ reactions: firebase.firestore.FieldValue.arrayRemove(reactionToRemove) });
-        if (existingReaction.type !== type) {
-            await postRef.update({ reactions: firebase.firestore.FieldValue.arrayUnion({ userId, type }) });
+    const existingIndex = post.reactions.findIndex(r => r.userId === userId);
+    if (existingIndex > -1) {
+        if (post.reactions[existingIndex].type === type) {
+            // Same reaction, so remove it (toggle off)
+            post.reactions.splice(existingIndex, 1);
+        } else {
+            // Different reaction, so update it
+            post.reactions[existingIndex].type = type;
         }
     } else {
-        await postRef.update({ reactions: firebase.firestore.FieldValue.arrayUnion({ userId, type }) });
+        // No existing reaction, so add it
+        post.reactions.push({ userId, type });
     }
-    return fromDoc(await postRef.get()) as BlogPost;
+    return Promise.resolve({ ...post });
   },
 
   addComment: async(postId: string, commentData: Omit<Comment, 'id' | 'timestamp'>): Promise<BlogPost> => {
-    // FIX: Use v8 firestore syntax
-    const postRef = db.collection('blogPosts').doc(postId);
-    const newComment = {
+    const post = mockBlogPosts.find(p => p.id === postId);
+    if (!post) throw new Error("Post not found");
+    const newComment: Comment = {
       ...commentData,
-      id: db.collection('dummy').doc().id,
+      id: `comment-${Date.now()}`,
       timestamp: new Date().toISOString()
     };
-    await postRef.update({ comments: firebase.firestore.FieldValue.arrayUnion(newComment) });
-    return fromDoc(await postRef.get()) as BlogPost;
+    post.comments.push(newComment);
+    return Promise.resolve({ ...post });
   },
 
   updateComment: async(postId: string, commentId: string, content: string): Promise<BlogPost> => {
-    // FIX: Use v8 firestore syntax
-    const postRef = db.collection('blogPosts').doc(postId);
-    const postSnap = await postRef.get();
-    const post = fromDoc(postSnap) as BlogPost;
-    const updatedComments = post.comments.map(c => c.id === commentId ? { ...c, content } : c);
-    await postRef.update({ comments: updatedComments });
-    // Re-fetch the entire post to ensure data consistency
-    const updatedSnap = await postRef.get();
-    return fromDoc(updatedSnap) as BlogPost;
+    const post = mockBlogPosts.find(p => p.id === postId);
+    if (!post) throw new Error("Post not found");
+    const comment = post.comments.find(c => c.id === commentId);
+    if (!comment) throw new Error("Comment not found");
+    comment.content = content;
+    return Promise.resolve({ ...post });
   },
 
   deleteComment: async(postId: string, commentId: string): Promise<BlogPost> => {
-    // FIX: Use v8 firestore syntax
-    const postRef = db.collection('blogPosts').doc(postId);
-    const postSnap = await postRef.get();
-    const post = fromDoc(postSnap) as BlogPost;
-    const commentToDelete = post.comments.find(c => c.id === commentId);
-    if (commentToDelete) {
-        await postRef.update({ comments: firebase.firestore.FieldValue.arrayRemove(commentToDelete) });
-    }
-    return fromDoc(await postRef.get()) as BlogPost;
+    const post = mockBlogPosts.find(p => p.id === postId);
+    if (!post) throw new Error("Post not found");
+    post.comments = post.comments.filter(c => c.id !== commentId);
+    return Promise.resolve({ ...post });
   },
 
-  // --- ADMIN ACTIONS ---
   deleteEntity: async(type: 'job' | 'company' | 'seeker' | 'blogPost', id: string): Promise<boolean> => {
-    const collectionName = type === 'blogPost' ? 'blogPosts' : `${type}s`;
-    // FIX: Use v8 firestore syntax
-    await db.collection(collectionName).doc(id).delete();
-    
-    // If a company is deleted, delete its jobs as well
+    if (type === 'job') mockJobs = mockJobs.filter(j => j.id !== id);
     if (type === 'company') {
-        const jobsQuery = db.collection('jobs').where('companyId', '==', id);
-        const jobsSnapshot = await jobsQuery.get();
-        for (const jobDoc of jobsSnapshot.docs) {
-            await jobDoc.ref.delete();
-        }
+        mockCompanies = mockCompanies.filter(c => c.id !== id);
+        mockJobs = mockJobs.filter(j => j.companyId !== id);
     }
-    return true;
+    if (type === 'seeker') mockSeekers = mockSeekers.filter(s => s.id !== id);
+    if (type === 'blogPost') mockBlogPosts = mockBlogPosts.filter(p => p.id !== id);
+    return Promise.resolve(true);
   }
 };
